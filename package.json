@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^0.0.21",
+    "@google/genai": "latest",
     "@monaco-editor/react": "^4.6.0",
     "@supabase/supabase-js": "^2.39.0",
     "firebase": "^10.13.1",
