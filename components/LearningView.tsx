@@ -1,225 +1,205 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FunctionCall, FunctionResponse } from "@google/genai";
-import { Course, Lesson, Transcript, ConsoleOutput, TestResult } from '../types';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Course, Lesson, ConsoleOutput, Transcript, InteractionMode, TestResult } from '../types';
+import { View } from '../App';
 import RoadmapSidebar from './RoadmapSidebar';
+import LearningHeader from './LearningHeader';
+import LearningFooter from './LearningFooter';
+import CodeWorkspace from './CodeWorkspace';
+import ConversationPanel from './ConversationPanel';
 import { useCourseProgress } from '../hooks/useCourseProgress';
 import { useLiveTutor } from '../hooks/useLiveTutor';
-import LearningHeader from './LearningHeader';
-import ConversationPanel from './ConversationPanel';
-import CodeWorkspace from './CodeWorkspace';
-import LearningFooter from './LearningFooter';
 import { executeCodeSafely, executeTests } from '../utils/codeExecutor';
-import { View } from '../App';
+import { FunctionCall, FunctionResponse } from "@google/genai";
 
 interface LearningViewProps {
-  course: Course;
-  navigateTo: (view: View) => void;
+    course: Course;
+    navigateTo: (view: View) => void;
 }
 
 const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
-  const { progress, updateProgress, completeLesson } = useCourseProgress(course.id);
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [isCompleting, setIsCompleting] = useState(false);
-  
-  // Initialize sidebar closed on mobile, open on desktop
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+    const { progress, loading: progressLoading, completeLesson, setCurrentLesson } = useCourseProgress(course.id);
+    const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+    const [currentLesson, setLesson] = useState<Lesson | null>(null);
+    const [editorCode, setEditorCode] = useState<string>('// Loading lesson...');
+    const [consoleOutput, setConsoleOutput] = useState<ConsoleOutput[]>([]);
+    const [transcript, setTranscript] = useState<Transcript>({ user: '', ai: '', isFinal: false });
+    const [isCompletingLesson, setIsCompletingLesson] = useState(false);
 
-  const [editorCode, setEditorCode] = useState('// Your AI tutor will write code here...');
-  const [consoleOutput, setConsoleOutput] = useState<ConsoleOutput[]>([]);
-  const [transcript, setTranscript] = useState<Transcript>({ user: '', ai: '', isFinal: false });
-
-  // Handle window resize to auto-manage sidebar state
-  useEffect(() => {
-      const handleResize = () => {
-          if (window.innerWidth >= 768) {
-              setIsSidebarOpen(true);
-          } else {
-              setIsSidebarOpen(false);
-          }
-      };
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const typeCode = (code: string) => {
-    setTimeout(() => {
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i < code.length) {
-                setEditorCode(prev => code.substring(0, i + 1));
-                i++;
-            } else {
-                clearInterval(interval);
+    // Find current lesson object
+    useEffect(() => {
+        if (!progressLoading && progress.currentLessonId) {
+            for (const module of course.modules) {
+                const lesson = module.lessons.find(l => l.id === progress.currentLessonId);
+                if (lesson) {
+                    setLesson(lesson);
+                    // Only reset code if it's a completely new lesson and empty (simple check)
+                    if (editorCode === '// Loading lesson...' || editorCode.includes('// Previous lesson')) {
+                         setEditorCode(`// ${lesson.title}\n// ${lesson.objectives[0]}\n\n`);
+                    }
+                    break;
+                }
             }
-        }, 15);
-    }, 50);
-  };
+        }
+    }, [progress.currentLessonId, course, progressLoading]);
 
-  const handleRunCode = useCallback(() => {
-    setConsoleOutput([]); 
-    executeCodeSafely(editorCode, (output) => {
-        setConsoleOutput(prev => [...prev, output]);
-    });
-  }, [editorCode]);
+    // --- Tool Call Handlers for AI ---
+    const handleToolCall = useCallback(async (functionCalls: FunctionCall[]): Promise<FunctionResponse[]> => {
+        const responses: FunctionResponse[] = [];
+        for (const call of functionCalls) {
+            let result: any = { error: "Unknown tool" };
+            try {
+                switch (call.name) {
+                    case 'writeCode':
+                        const { code, explanation } = call.args as any;
+                        // We append or replace depending on context, for now let's append with a newline if not empty
+                        setEditorCode(prev => {
+                            // Basic heuristic: if completely empty or just comments, replace. Otherwise append.
+                            const isEffectiveEmpty = prev.trim().length === 0 || prev.split('\n').every(line => line.trim().startsWith('//'));
+                            return isEffectiveEmpty ? code : `${prev}\n\n${code}`;
+                        });
+                        result = { success: true, message: "Code written to editor." };
+                        break;
+                    case 'readCode':
+                        // We need the *current* state of editorCode here. 
+                        // The useLiveTutor hook uses a ref to ensure it gets the latest version of this callback.
+                        // We must ensure WE also have access to the latest state if we were using closures,
+                        // but the setState callback pattern above helps for writeCode.
+                        // For readCode, we might need a ref if this callback doesn't update with state changes in the hook.
+                        // *Self-correction*: standard useState in standard callback might be stale if the callback isn't recreated.
+                        // We'll trust React's state for now, but might need a Ref for editorCode if it reads stale data.
+                        // Actually, let's USE A REF for editorCode to be safe in async callbacks.
+                        result = { code: editorCodeRef.current };
+                        break;
+                    case 'executeCode':
+                        handleRunCode();
+                        result = { success: true, message: "Code execution triggered." };
+                        break;
+                    default:
+                         result = { error: `Unknown tool: ${call.name}` };
+                }
+            } catch (e: any) {
+                result = { error: e.message };
+            }
+            responses.push({ id: call.id, name: call.name, response: result });
+        }
+        return responses;
+    }, []); // Dependencies will be managed by the Ref in useLiveTutor, but we need to keep editorCode Ref updated.
 
-  const handleRunTests = useCallback((): TestResult[] => {
-      if (!currentLesson || !currentLesson.content.exercises || currentLesson.content.exercises.length === 0) {
-          return [];
-      }
-      return executeTests(editorCode, currentLesson.content.exercises[0].tests);
-  }, [editorCode, currentLesson]);
+    // Keep a ref for editor code to avoid stale closures in tool calls
+    const editorCodeRef = useRef(editorCode);
+    useEffect(() => {
+        editorCodeRef.current = editorCode;
+    }, [editorCode]);
 
-  const handleToolCall = async (functionCalls: FunctionCall[]): Promise<FunctionResponse[]> => {
-      const responses: FunctionResponse[] = [];
-      for (const fc of functionCalls) {
-          switch (fc.name) {
-              case 'writeCode':
-                  setEditorCode('');
-                  typeCode((fc.args?.code as string) || '');
-                  responses.push({ id: fc.id, name: fc.name, response: { result: "Code written successfully." } });
-                  break;
-              case 'executeCode':
-                  handleRunCode();
-                  responses.push({ id: fc.id, name: fc.name, response: { result: "Code executed." } });
-                  break;
-              case 'readCode':
-                  responses.push({ id: fc.id, name: fc.name, response: { result: editorCode } });
-                  break;
-          }
-      }
-      return responses;
-  };
+    const onStreamMessage = useCallback((newTranscript: Transcript) => {
+        setTranscript(newTranscript);
+    }, []);
 
-  const onStreamMessage = useCallback((newTranscript: Transcript) => {
-    setTranscript(newTranscript);
-  }, []);
-  
-  useEffect(() => {
-    if (progress.currentLessonId) {
-        const lesson = course.modules
-          .flatMap(m => m.lessons)
-          .find(l => l.id === progress.currentLessonId);
-        setCurrentLesson(lesson || null);
-    } else {
-         const firstLesson = course.modules[0]?.lessons[0];
-         if (firstLesson) {
-             updateProgress({ currentLessonId: firstLesson.id });
-         }
+    const { 
+        isSessionActive, isConnecting, isListening, isSpeaking, startSession, stopSession, sessionError 
+    } = useLiveTutor(onStreamMessage, handleToolCall, progress, currentLesson);
+
+    // --- Event Handlers ---
+
+    const handleRunCode = () => {
+        setConsoleOutput([]); // Clear previous output
+        executeCodeSafely(editorCode, (log) => {
+            setConsoleOutput(prev => [...prev, log]);
+        });
+    };
+
+    const handleRunTests = (): TestResult[] => {
+        if (!currentLesson || currentLesson.content.exercises.length === 0) return [];
+        const exercise = currentLesson.content.exercises[0];
+        return executeTests(editorCode, exercise.tests);
     }
-  }, [progress.currentLessonId, course, updateProgress]);
 
-  const { 
-    isSessionActive, 
-    isConnecting,
-    isSpeaking, 
-    isListening, 
-    startSession, 
-    stopSession,
-    sessionError
-  } = useLiveTutor(onStreamMessage, handleToolCall, progress, currentLesson);
-  
-  // Memoize the flattened list of lessons for easier navigation lookup
-  const allLessons = useMemo(() => course.modules.flatMap(m => m.lessons), [course]);
+    const handleResetCode = () => {
+        if (confirm("Are you sure you want to reset your code?")) {
+             setEditorCode(`// ${currentLesson?.title}\n// ${currentLesson?.objectives[0]}\n\n`);
+             setConsoleOutput([]);
+        }
+    };
 
-  const handleCompleteLesson = async () => {
-      if (!currentLesson || isCompleting) return;
-      
-      setIsCompleting(true);
-      try {
-          const currentIndex = allLessons.findIndex(l => l.id === currentLesson.id);
-          let nextLessonId = currentLesson.id; // Default to staying on current if it's the last one
-
-          if (currentIndex !== -1 && currentIndex < allLessons.length - 1) {
-              nextLessonId = allLessons[currentIndex + 1].id;
-          }
-
-          await completeLesson(currentLesson.id, nextLessonId);
-
-          if (nextLessonId === currentLesson.id && currentIndex === allLessons.length - 1) {
-               // If we didn't move and we are at the end, they finished the course.
-               alert(`Congratulations! You've completed the ${course.title} course!`);
-               navigateTo('dashboard');
-          }
-      } catch (error) {
-          console.error("Failed to complete lesson:", error);
-          // Optional: Show a toast error here
-      } finally {
-          setIsCompleting(false);
-      }
-  }
-  
-  const handleLessonClick = async (lessonId: string) => {
-      await updateProgress({ currentLessonId: lessonId });
-      if (window.innerWidth < 768) {
-          setIsSidebarOpen(false);
-      }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-[#0D0D0D] text-gray-200 font-sans flex overflow-hidden">
-      {/* Mobile Sidebar Backdrop */}
-      {isSidebarOpen && (
-          <div 
-              className="md:hidden fixed inset-0 bg-black/80 z-30 backdrop-blur-sm transition-opacity"
-              onClick={() => setIsSidebarOpen(false)}
-          />
-      )}
-
-      <RoadmapSidebar
-        course={course}
-        completedLessons={progress.completedLessons}
-        currentLessonId={progress.currentLessonId}
-        onBack={() => navigateTo('dashboard')}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
-        onLessonClick={handleLessonClick}
-      />
-
-      <main className={`flex flex-col flex-grow relative h-full transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : ''} w-full`}>
-        <LearningHeader 
-            lessonTitle={currentLesson?.title || 'Loading...'} 
-            courseTitle={course.title}
-            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            isSidebarOpen={isSidebarOpen}
-            navigateTo={navigateTo}
-        />
+    const handleCompleteLesson = async () => {
+        if (!currentLesson) return;
+        setIsCompletingLesson(true);
+        // In a real app, we'd might ask the AI to summarize memory updates here before completing.
+        // For now, just use the static ones from the lesson.
+        await completeLesson(currentLesson.id, currentLesson.memoryUpdates.conceptsMastered);
         
-        <div className="flex-grow flex flex-col md:grid md:grid-cols-2 gap-4 p-2 md:p-4 overflow-hidden min-h-0">
-          <div className="h-[35%] md:h-auto min-h-0 flex-shrink-0 md:flex-shrink">
-               <ConversationPanel 
-                isSessionActive={isSessionActive}
-                isConnecting={isConnecting}
-                isListening={isListening}
-                isSpeaking={isSpeaking}
-                startSession={startSession}
-                stopSession={stopSession}
-                transcript={transcript}
-                sessionError={sessionError}
-              />
-          </div>
-          <div className="flex-1 md:h-auto min-h-0">
-              <CodeWorkspace 
-                code={editorCode}
-                onCodeChange={(val) => setEditorCode(val || '')}
-                output={consoleOutput}
-                exercises={currentLesson?.content.exercises || []}
-                onRunTests={handleRunTests}
-              />
-          </div>
-        </div>
+        // The effect above will switch the lesson, but let's clear output
+        setConsoleOutput([]);
+        setIsCompletingLesson(false);
+    };
 
-        <LearningFooter 
-            onComplete={handleCompleteLesson}
-            onRun={handleRunCode}
-            onReset={() => {
-                setEditorCode('// Code has been reset.');
-                setConsoleOutput([]);
-            }}
-            isCompleting={isCompleting}
-        />
-      </main>
-    </div>
-  );
+    const handleSelectLesson = (lessonId: string) => {
+        setCurrentLesson(lessonId);
+        if (window.innerWidth < 768) {
+            setSidebarOpen(false);
+        }
+    };
+
+    if (!currentLesson) {
+        return <div className="h-screen flex items-center justify-center bg-[#0D0D0D] text-brand-green"><i className="fas fa-circle-notch fa-spin text-4xl"></i></div>;
+    }
+
+    return (
+        <div className="flex flex-col h-screen bg-[#0D0D0D] overflow-hidden">
+            <LearningHeader 
+                lessonTitle={currentLesson.title}
+                courseTitle={course.title}
+                toggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
+                isSidebarOpen={isSidebarOpen}
+                navigateTo={navigateTo}
+            />
+
+            <div className="flex-grow flex overflow-hidden">
+                <RoadmapSidebar 
+                    course={course}
+                    currentLessonId={currentLesson.id}
+                    completedLessons={progress.completedLessons}
+                    onSelectLesson={handleSelectLesson}
+                    isOpen={isSidebarOpen}
+                />
+
+                <main className="flex-grow flex flex-col md:flex-row min-w-0">
+                     {/* Left/Top: Code Area */}
+                    <div className={`flex-grow md:flex-[5] lg:flex-[6] p-1 md:p-2 min-h-0 flex flex-col transition-all ${isSessionActive ? 'h-1/2 md:h-full' : 'h-2/3 md:h-full'}`}>
+                         <CodeWorkspace 
+                            code={editorCode} 
+                            onCodeChange={(val) => setEditorCode(val || '')}
+                            output={consoleOutput}
+                            exercises={currentLesson.content.exercises}
+                            onRunTests={handleRunTests}
+                         />
+                    </div>
+
+                    {/* Right/Bottom: AI Interaction Area */}
+                    <div className={`md:flex-[3] lg:flex-[3] p-1 md:p-2 border-t md:border-t-0 md:border-l border-[#262626] bg-[#111] flex flex-col min-h-0 transition-all ${isSessionActive ? 'h-1/2 md:h-full' : 'h-1/3 md:h-full'}`}>
+                         <ConversationPanel
+                            isSessionActive={isSessionActive}
+                            isConnecting={isConnecting}
+                            isListening={isListening}
+                            isSpeaking={isSpeaking}
+                            startSession={startSession}
+                            stopSession={stopSession}
+                            transcript={transcript}
+                            sessionError={sessionError}
+                         />
+                    </div>
+                </main>
+            </div>
+
+            <LearningFooter 
+                onRun={handleRunCode}
+                onReset={handleResetCode}
+                onComplete={handleCompleteLesson}
+                isCompleting={isCompletingLesson}
+            />
+        </div>
+    );
 };
 
 export default LearningView;

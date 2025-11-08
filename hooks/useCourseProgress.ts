@@ -1,136 +1,110 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { Progress, CourseProgress } from '../types';
-import { INITIAL_PROGRESS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
+import { dbService } from '../services/dbService';
+import { Progress } from '../types';
+import { INITIAL_PROGRESS, JAVASCRIPT_COURSE } from '../constants';
 
 export const useCourseProgress = (courseId: string) => {
-  const { user, loading: authLoading } = useAuth();
-  const [progress, setProgress] = useState<Progress>(INITIAL_PROGRESS);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const { user, loading: authLoading } = useAuth();
+    const [progress, setProgress] = useState<Progress>(INITIAL_PROGRESS);
+    const [loading, setLoading] = useState(true);
 
-  // Real-time subscription to Firestore
-  useEffect(() => {
-    if (authLoading) return;
+    // Helper to find the next lesson ID
+    const findNextLessonId = (currentId: string): string | null => {
+        let foundCurrent = false;
+        for (const module of JAVASCRIPT_COURSE.modules) {
+            for (const lesson of module.lessons) {
+                if (foundCurrent) return lesson.id;
+                if (lesson.id === currentId) foundCurrent = true;
+            }
+        }
+        return null;
+    };
 
-    if (!user) {
-        // DEMO MODE: Load from localStorage once on mount
-        try {
-            const localData = window.localStorage.getItem(`progress-${courseId}`);
-            if (localData) {
-                setProgress(JSON.parse(localData));
+    useEffect(() => {
+        if (authLoading) return;
+
+        if (!user) {
+            // Demo mode: use localStorage
+            const local = localStorage.getItem(`voicecode_progress_${courseId}`);
+            if (local) {
+                try {
+                    setProgress(JSON.parse(local));
+                } catch (e) {
+                    console.error("Failed to parse local progress", e);
+                    setProgress(INITIAL_PROGRESS);
+                }
             } else {
                 setProgress(INITIAL_PROGRESS);
             }
-        } catch (e) {
-            console.error("Local storage error", e);
-            setProgress(INITIAL_PROGRESS);
+            setLoading(false);
+            return;
         }
-        setLoading(false);
-        return;
-    }
 
-    setLoading(true);
-    const docRef = doc(db, 'users', user.id, 'progress', courseId);
-
-    const unsubscribe = onSnapshot(docRef, {
-        next: (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.data() as CourseProgress;
-                // Map Firestore data model back to app internal Progress model
-                setProgress({
-                    completedLessons: data.completedLessonIds || [],
-                    currentLessonId: data.currentLessonId || INITIAL_PROGRESS.currentLessonId,
-                    aiMemory: data.aiMemory || INITIAL_PROGRESS.aiMemory
-                });
-            } else {
-                // If doc doesn't exist yet for authed user, use defaults (don't auto-create until they do something)
+        const loadProgress = async () => {
+            setLoading(true);
+            try {
+                const data = await dbService.getUserProgress(user.id, courseId);
+                setProgress(data || INITIAL_PROGRESS);
+            } catch (error) {
+                console.error("Failed to load progress:", error);
+                // Fallback to initial if DB fails
                 setProgress(INITIAL_PROGRESS);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
-            setError(null);
-        },
-        error: (err) => {
-            console.error("Firestore progress sync error:", err);
-            setError("Failed to sync progress.");
-            setLoading(false);
+        };
+
+        loadProgress();
+    }, [user, courseId, authLoading]);
+
+    const updateProgress = useCallback(async (newProgress: Progress) => {
+        setProgress(newProgress);
+        if (user) {
+            await dbService.saveUserProgress(user.id, courseId, newProgress);
+        } else {
+            localStorage.setItem(`voicecode_progress_${courseId}`, JSON.stringify(newProgress));
         }
-    });
+    }, [user, courseId]);
 
-    return () => unsubscribe();
-  }, [user, courseId, authLoading]);
-
-  // Helper to save to localStorage for demo users
-  const saveToLocal = (newProgress: Progress) => {
-      try {
-        window.localStorage.setItem(`progress-${courseId}`, JSON.stringify(newProgress));
-      } catch (e) {
-          console.error("Failed to save to localStorage", e);
-      }
-  };
-
-  const updateProgress = useCallback(async (newProgressData: Partial<Progress>) => {
-    if (!user) {
+    const completeLesson = useCallback(async (lessonId: string, aiMemoryUpdate?: string[]) => {
         setProgress(prev => {
-            const updated = { ...prev, ...newProgressData };
-            saveToLocal(updated);
-            return updated;
-        });
-        return;
-    }
+            const completedLessons = prev.completedLessons.includes(lessonId)
+                ? prev.completedLessons
+                : [...prev.completedLessons, lessonId];
+            
+            const nextLessonId = findNextLessonId(lessonId) || lessonId;
+            const newMemory = aiMemoryUpdate ? [...prev.aiMemory, ...aiMemoryUpdate] : prev.aiMemory;
 
-    try {
-        const docRef = doc(db, 'users', user.id, 'progress', courseId);
-        // We need to map our internal Progress type to the Firestore CourseProgress type for saving
-        const updatePayload: any = { updatedAt: serverTimestamp() };
-        
-        if (newProgressData.currentLessonId !== undefined) updatePayload.currentLessonId = newProgressData.currentLessonId;
-        if (newProgressData.completedLessons !== undefined) updatePayload.completedLessonIds = newProgressData.completedLessons;
-        if (newProgressData.aiMemory !== undefined) updatePayload.aiMemory = newProgressData.aiMemory;
-
-        // setDoc with merge: true acts as both create-if-missing and update
-        await setDoc(docRef, updatePayload, { merge: true });
-    } catch (err) {
-        console.error("Failed to update progress:", err);
-        setError("Failed to save progress.");
-        // Optional: Revert local state if we were doing optimistic updates here purely manually
-    }
-  }, [user, courseId]);
-
-  const completeLesson = useCallback(async (lessonId: string, nextLessonId: string) => {
-    if (!user) {
-         setProgress(prev => {
-            const newCompleted = prev.completedLessons.includes(lessonId) ? prev.completedLessons : [...prev.completedLessons, lessonId];
-            const updated = {
-                ...prev,
-                completedLessons: newCompleted,
+            const newProgress = {
+                completedLessons,
                 currentLessonId: nextLessonId,
-                aiMemory: [...prev.aiMemory, `User completed lesson ${lessonId}.`]
+                aiMemory: [...new Set(newMemory)] // Deduplicate memory
             };
-            saveToLocal(updated);
-            return updated;
+
+            // Fire and forget save
+            if (user) {
+                dbService.saveUserProgress(user.id, courseId, newProgress);
+            } else {
+                localStorage.setItem(`voicecode_progress_${courseId}`, JSON.stringify(newProgress));
+            }
+
+            return newProgress;
         });
-        return;
-    }
+    }, [user, courseId]);
 
-    try {
-        const docRef = doc(db, 'users', user.id, 'progress', courseId);
-        // Atomic update using arrayUnion to prevent race conditions when adding completed lessons
-        await setDoc(docRef, {
-            completedLessonIds: arrayUnion(lessonId),
-            currentLessonId: nextLessonId,
-            aiMemory: arrayUnion(`User completed lesson ${lessonId}.`),
-            updatedAt: serverTimestamp()
-        }, { merge: true });
+    const setCurrentLesson = useCallback(async (lessonId: string) => {
+        setProgress(prev => {
+             const newProgress = { ...prev, currentLessonId: lessonId };
+              if (user) {
+                dbService.saveUserProgress(user.id, courseId, newProgress);
+            } else {
+                localStorage.setItem(`voicecode_progress_${courseId}`, JSON.stringify(newProgress));
+            }
+            return newProgress;
+        });
+    }, [user, courseId]);
 
-    } catch (err) {
-        console.error("Failed to complete lesson:", err);
-        setError("Failed to save lesson completion.");
-    }
-  }, [user, courseId]);
-
-  return { progress, updateProgress, completeLesson, loading, error };
+    return { progress, loading, updateProgress, completeLesson, setCurrentLesson };
 };

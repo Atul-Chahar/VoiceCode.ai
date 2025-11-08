@@ -1,4 +1,5 @@
-import * as firebase from 'firebase/app';
+
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
@@ -21,7 +22,7 @@ const firebaseConfig = {
 
 // Initialize Firebase singleton.
 // Prevents re-initialization errors during hot-reloads in development.
-const app = firebase.getApps().length > 0 ? firebase.getApp() : firebase.initializeApp(firebaseConfig);
+const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize and export services
 export const auth: Auth = getAuth(app);
