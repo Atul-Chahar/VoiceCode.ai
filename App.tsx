@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import LandingPage from './components/CourseSelection';
 import DashboardPage from './pages/DashboardPage';
 import LearningView from './components/LearningView';
@@ -6,20 +7,53 @@ import { JAVASCRIPT_COURSE } from './constants';
 import PricingPage from './pages/PricingPage';
 import CoursesPage from './pages/CoursesPage';
 import ExplanationsPage from './pages/ExplanationsPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations';
+export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations' | 'login' | 'signup';
 
-const App: React.FC = () => {
+const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('landing');
+  const { user, loading } = useAuth();
 
   const navigateTo = useCallback((view: View) => {
+    // Protected routes
+    const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
+    if (protectedViews.includes(view) && !user && !loading) {
+       setCurrentView('login');
+       window.scrollTo(0, 0);
+       return;
+    }
     setCurrentView(view);
     window.scrollTo(0, 0);
-  }, []);
+  }, [user, loading]);
+
+  // Effect to handle initial load redirection if on a protected route
+  useEffect(() => {
+      if (!loading) {
+          const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
+          if (protectedViews.includes(currentView) && !user) {
+              setCurrentView('login');
+          }
+          // Redirect from auth pages if already logged in
+          if ((currentView === 'login' || currentView === 'signup') && user) {
+              setCurrentView('dashboard');
+          }
+      }
+  }, [currentView, user, loading]);
 
   const renderContent = () => {
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                 <i className="fas fa-circle-notch fa-spin text-brand-green text-4xl"></i>
+            </div>
+        );
+    }
+
     switch (currentView) {
       case 'landing':
         return <LandingPage navigateTo={navigateTo} />;
@@ -33,23 +67,35 @@ const App: React.FC = () => {
         return <LearningView course={JAVASCRIPT_COURSE} navigateTo={navigateTo} />;
       case 'explanations':
         return <ExplanationsPage navigateTo={navigateTo} />;
+      case 'login':
+        return <LoginPage navigateTo={navigateTo} />;
+      case 'signup':
+        return <SignupPage navigateTo={navigateTo} />;
       default:
         return <LandingPage navigateTo={navigateTo} />;
     }
   };
   
-  // The lesson view is full-screen and doesn't need the standard Navbar/Footer
+  // Views that don't need standard Nav/Footer
   if (currentView === 'lesson') {
     return renderContent();
   }
 
   return (
     <>
-      <Navbar navigateTo={navigateTo} />
+      <Navbar navigateTo={navigateTo} currentView={currentView} />
       <main>{renderContent()}</main>
       <Footer />
     </>
   );
+};
+
+const App: React.FC = () => {
+    return (
+        <AuthProvider>
+            <MainApp />
+        </AuthProvider>
+    );
 };
 
 export default App;

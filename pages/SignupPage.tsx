@@ -1,0 +1,158 @@
+
+import React, { useState } from 'react';
+import { View } from '../App';
+import { useAuth } from '../contexts/AuthContext';
+
+interface SignupPageProps {
+    navigateTo: (view: View) => void;
+}
+
+const SignupPage: React.FC<SignupPageProps> = ({ navigateTo }) => {
+    const { signup, loginWithGoogle } = useAuth();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            await signup(name, email, password);
+            // Check if email confirmation is required by Supabase settings.
+            // Usually it auto-logs in, but if it doesn't, we might need to prompt user to check email.
+             navigateTo('dashboard');
+        } catch (err: any) {
+            setError(err.message || 'Failed to create account');
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSignup = async () => {
+        try {
+            setError('');
+            await loginWithGoogle();
+            // Redirect handled by Supabase
+        } catch (err: any) {
+             setError(err.message || 'Failed to sign up with Google');
+        }
+    }
+
+    return (
+        <div className="min-h-screen pt-24 pb-12 px-4 flex items-center justify-center">
+            <div className="dark-card w-full max-w-md p-8 rounded-xl border-[#262626]">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold mb-2">Create Account</h1>
+                    <p className="text-gray-400">Start your voice coding journey today</p>
+                </div>
+
+                {error && (
+                    <div className="bg-red-900/20 border border-red-500/50 text-red-200 p-3 rounded-lg mb-6 text-sm">
+                        <i className="fas fa-exclamation-circle mr-2"></i>
+                        {error}
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    <button
+                        onClick={handleGoogleSignup}
+                        type="button"
+                        className="w-full bg-white text-gray-900 py-3 rounded-lg font-semibold text-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                    >
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-6 h-6 mr-3" />
+                        Sign up with Google
+                    </button>
+
+                    <div className="flex items-center my-6">
+                        <div className="flex-grow h-px bg-[#262626]"></div>
+                        <span className="px-4 text-gray-500 text-sm">OR</span>
+                        <div className="flex-grow h-px bg-[#262626]"></div>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i className="fas fa-user text-gray-500"></i>
+                            </div>
+                            <input
+                                type="text"
+                                required
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full bg-[#0D0D0D] border border-[#262626] rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-brand-green transition-colors"
+                                placeholder="John Doe"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i className="fas fa-envelope text-gray-500"></i>
+                            </div>
+                            <input
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full bg-[#0D0D0D] border border-[#262626] rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-brand-green transition-colors"
+                                placeholder="you@example.com"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i className="fas fa-lock text-gray-500"></i>
+                            </div>
+                            <input
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-[#0D0D0D] border border-[#262626] rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-brand-green transition-colors"
+                                placeholder="Minimum 6 characters"
+                            />
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className={`w-full btn-primary py-3 rounded-lg font-semibold text-lg flex items-center justify-center ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                        {isLoading ? (
+                            <><i className="fas fa-spinner fa-spin mr-2"></i> Creating Account...</>
+                        ) : (
+                            'Sign Up'
+                        )}
+                    </button>
+                </form>
+
+                <p className="text-center text-gray-400 mt-8">
+                    Already have an account?{' '}
+                    <button onClick={() => navigateTo('login')} className="text-brand-green hover:underline font-medium">
+                        Sign In
+                    </button>
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default SignupPage;

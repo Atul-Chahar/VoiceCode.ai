@@ -33,6 +33,13 @@ export interface TestResult {
     error?: string;
 }
 
+// --- Auth Types ---
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+}
+
 // --- Standardized Curriculum Types (based on PDF Pages 13-15) ---
 
 export interface Demo {

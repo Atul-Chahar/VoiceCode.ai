@@ -1,13 +1,16 @@
+
 import React from 'react';
 import { View } from '../App';
 import { JAVASCRIPT_COURSE } from '../constants';
 import { useCourseProgress } from '../hooks/useCourseProgress';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardPageProps {
   navigateTo: (view: View) => void;
 }
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
+  const { user } = useAuth();
   const { progress } = useCourseProgress(JAVASCRIPT_COURSE.id);
   const totalLessons = JAVASCRIPT_COURSE.modules.reduce((acc, module) => acc + module.lessons.length, 0);
   const completedLessonsCount = progress.completedLessons.length;
@@ -17,7 +20,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
     <div className="pt-24 pb-12 px-4 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <header className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-2">Welcome Back!</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-2">Welcome Back, <span className="text-brand-green">{user?.name.split(' ')[0] || 'Coder'}</span>!</h1>
           <p className="text-xl text-gray-400">Ready to continue your coding journey?</p>
         </header>
         
@@ -38,7 +41,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
                 <p className="text-sm text-gray-500 mt-2">{completedLessonsCount} of {totalLessons} lessons completed</p>
               </div>
               <button onClick={() => navigateTo('lesson')} className="btn-primary px-6 py-3 rounded-lg w-full md:w-auto flex-shrink-0">
-                Start Lesson
+                Continue Lesson
               </button>
             </div>
           </div>

@@ -1,6 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Transcript } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { dbService } from '../services/dbService';
 
 interface ConversationPanelProps {
     isSessionActive: boolean;
@@ -23,22 +25,56 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
     transcript,
     sessionError
 }) => {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'chat' | 'notes'>('chat');
-    const [notes, setNotes] = useState(() => {
-        try {
-            return localStorage.getItem('voicecode_notes') || '';
-        } catch {
-            return '';
-        }
-    });
+    const [notes, setNotes] = useState('');
+    const [isNotesLoading, setIsNotesLoading] = useState(false);
+    // Use a ref to debounce standard Firestore saves
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Load Notes
     useEffect(() => {
-        try {
-            localStorage.setItem('voicecode_notes', notes);
-        } catch (e) {
-            console.error('Failed to save notes', e);
+        const loadNotes = async () => {
+            if (!user) {
+                 setNotes(localStorage.getItem('voicecode_notes') || '');
+                 return;
+            }
+
+            setIsNotesLoading(true);
+            try {
+                const fetchedNotes = await dbService.getUserNotes(user.id);
+                setNotes(fetchedNotes);
+            } catch (e) {
+                console.error("Failed to load notes", e);
+            } finally {
+                setIsNotesLoading(false);
+            }
         }
-    }, [notes]);
+        loadNotes();
+    }, [user]);
+
+    // Save Notes (Debounced)
+    const handleNotesChange = (newNotes: string) => {
+        setNotes(newNotes);
+
+        if (!user) {
+             localStorage.setItem('voicecode_notes', newNotes);
+             return;
+        }
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        // Wait 1 second after last keystroke before saving to DB
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                await dbService.saveUserNotes(user.id, newNotes);
+            } catch (e) {
+                console.error("Failed to save notes to DB", e);
+            }
+        }, 1000);
+    };
 
     const handleMicClick = () => {
         if (isSessionActive) {
@@ -140,12 +176,17 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                     </div>
                 </div>
             ) : (
-                <div className="flex-grow p-4 min-h-0 bg-[#181818]">
+                <div className="flex-grow p-4 min-h-0 bg-[#181818] relative">
+                    {isNotesLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#181818]/80 z-10">
+                            <i className="fas fa-spinner fa-spin text-brand-green text-2xl"></i>
+                        </div>
+                    )}
                     <textarea
                         className="w-full h-full bg-[#0D0D0D] border border-[#262626] rounded-lg p-4 text-gray-300 resize-none focus:outline-none focus:border-brand-green transition-colors font-mono text-sm placeholder-gray-600"
-                        placeholder="Type your notes here..."
+                        placeholder={user ? "Type your notes here... They automatically save to the cloud." : "Type your notes here... (Local storage only until you sign in)"}
                         value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
+                        onChange={(e) => handleNotesChange(e.target.value)}
                         spellCheck={false}
                     />
                 </div>
