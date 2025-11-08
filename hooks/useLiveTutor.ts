@@ -21,6 +21,10 @@ export const useLiveTutor = (
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  
+  // Mute state
+  const [isMuted, setIsMuted] = useState(false);
+  const isMutedRef = useRef(false);
 
   const inputAudioContextRef = useRef<AudioContext | undefined>(undefined);
   const outputAudioContextRef = useRef<AudioContext | undefined>(undefined);
@@ -39,6 +43,12 @@ export const useLiveTutor = (
   useEffect(() => {
       onToolCallRef.current = onToolCall;
   }, [onToolCall]);
+
+  const toggleMute = useCallback(() => {
+      const newState = !isMutedRef.current;
+      isMutedRef.current = newState;
+      setIsMuted(newState);
+  }, []);
 
   const processAudioMessage = useCallback(async (message: LiveServerMessage) => {
     // TS Fix: deeper optional chaining for parts array access
@@ -113,6 +123,9 @@ export const useLiveTutor = (
     setIsSessionActive(false);
     setIsConnecting(false);
     setIsListening(false);
+    // Reset mute state on close
+    isMutedRef.current = false;
+    setIsMuted(false);
   }, []);
 
   const connectRef = useRef<(() => Promise<void>) | undefined>(undefined);
@@ -155,6 +168,9 @@ export const useLiveTutor = (
                 scriptProcessorRef.current = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
                 
                 scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
+                    // SOFT MUTE CHECK: If muted, do not send data to the model.
+                    if (isMutedRef.current) return;
+
                     sessionPromiseRef.current?.then((session) => {
                         const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
                         session.sendRealtimeInput({ media: createPcmBlob(inputData) });
@@ -223,5 +239,15 @@ export const useLiveTutor = (
     sessionPromiseRef.current = null;
   }, [cleanUpResources]);
 
-  return { isSessionActive, isConnecting, isSpeaking, isListening, startSession, stopSession, sessionError };
+  return { 
+      isSessionActive, 
+      isConnecting, 
+      isSpeaking, 
+      isListening, 
+      startSession, 
+      stopSession, 
+      sessionError,
+      isMuted,
+      toggleMute
+  };
 };

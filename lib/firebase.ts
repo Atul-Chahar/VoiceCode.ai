@@ -1,14 +1,12 @@
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import type { FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import type { Auth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager
+  persistentMultipleTabManager,
+  type Firestore 
 } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 // Use (import.meta as any).env to avoid TypeScript errors if Vite types aren't strictly loaded.
@@ -23,7 +21,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase singleton.
-// Prevents re-initialization errors during hot-reloads in development.
+// Uses getApps() check to prevent re-initialization errors during hot-reloads.
 const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize and export services

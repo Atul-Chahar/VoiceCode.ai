@@ -56,6 +56,22 @@ const readCodeTool: FunctionDeclaration = {
     },
 };
 
+const controlAppTool: FunctionDeclaration = {
+    name: 'controlApp',
+    parameters: {
+        type: Type.OBJECT,
+        description: 'Triggers an action in the application when the user gives a voice command like "run code", "reset", or "next lesson".',
+        properties: {
+            action: {
+                type: Type.STRING,
+                enum: ['runCode', 'resetCode', 'nextLesson'],
+                description: 'The action to perform.',
+            }
+        },
+        required: ['action'],
+    },
+};
+
 // Helper type to get the return type of connect, handling the lazy client
 type LiveSessionType = Awaited<ReturnType<GoogleGenAI['live']['connect']>>;
 export type LiveSession = LiveSessionType;
@@ -93,6 +109,7 @@ Your goal is to teach programming through natural, human-like conversation, adhe
 **TEACHING TOOLS:**
 - USE 'writeCode' FREQUENTLY to manifest examples on their screen while you talk.
 - USE 'readCode' before debugging their work.
+- LISTEN for voice commands like "run the code", "start over" (reset), or "I'm done" (next lesson) and use the 'controlApp' tool to trigger them.
 
 ${lessonProtocol}
 
@@ -112,7 +129,7 @@ ${lessonProtocol}
             systemInstruction,
             outputAudioTranscription: {},
             inputAudioTranscription: {},
-            tools: [{ functionDeclarations: [writeCodeTool, executeCodeTool, readCodeTool] }],
+            tools: [{ functionDeclarations: [writeCodeTool, executeCodeTool, readCodeTool, controlAppTool] }],
         },
     });
 };

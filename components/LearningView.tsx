@@ -43,6 +43,42 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
         }
     }, [progress.currentLessonId, course, progressLoading]);
 
+    // Keep a ref for editor code to avoid stale closures in tool calls
+    const editorCodeRef = useRef(editorCode);
+    useEffect(() => {
+        editorCodeRef.current = editorCode;
+    }, [editorCode]);
+
+    // Keep a ref for currentLesson to avoid stale closures
+    const currentLessonRef = useRef(currentLesson);
+    useEffect(() => {
+        currentLessonRef.current = currentLesson;
+    }, [currentLesson]);
+
+    // --- Event Handlers (Defined early for tool use) ---
+    const handleRunCode = useCallback(() => {
+        setConsoleOutput([]); // Clear previous output
+        // Use ref to get latest code even if this closure is stale
+        executeCodeSafely(editorCodeRef.current, (log) => {
+            setConsoleOutput(prev => [...prev, log]);
+        });
+    }, []);
+
+    const handleResetCode = useCallback(() => {
+        const lesson = currentLessonRef.current;
+        setEditorCode(`// ${lesson?.title}\n// ${lesson?.objectives[0]}\n\n`);
+        setConsoleOutput([]);
+    }, []);
+
+    const handleCompleteLesson = useCallback(async () => {
+        const lesson = currentLessonRef.current;
+        if (!lesson) return;
+        setIsCompletingLesson(true);
+        await completeLesson(lesson.id, lesson.memoryUpdates.conceptsMastered);
+        setConsoleOutput([]);
+        setIsCompletingLesson(false);
+    }, [completeLesson]);
+
     // --- Tool Call Handlers for AI ---
     const handleToolCall = useCallback(async (functionCalls: FunctionCall[]): Promise<FunctionResponse[]> => {
         const responses: FunctionResponse[] = [];
@@ -52,21 +88,33 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
                 switch (call.name) {
                     case 'writeCode':
                         const { code } = call.args as any;
-                        // We append or replace depending on context, for now let's append with a newline if not empty
                         setEditorCode(prev => {
-                            // Basic heuristic: if completely empty or just comments, replace. Otherwise append.
                             const isEffectiveEmpty = prev.trim().length === 0 || prev.split('\n').every(line => line.trim().startsWith('//'));
                             return isEffectiveEmpty ? code : `${prev}\n\n${code}`;
                         });
                         result = { success: true, message: "Code written to editor." };
                         break;
                     case 'readCode':
-                        // We use a ref to ensure we get the latest editor code
                         result = { code: editorCodeRef.current };
                         break;
                     case 'executeCode':
                         handleRunCode();
                         result = { success: true, message: "Code execution triggered." };
+                        break;
+                    case 'controlApp':
+                        const { action } = call.args as any;
+                        if (action === 'runCode') {
+                            handleRunCode();
+                            result = { success: true, message: "Code running." };
+                        } else if (action === 'resetCode') {
+                            handleResetCode();
+                            result = { success: true, message: "Code reset to lesson default." };
+                        } else if (action === 'nextLesson') {
+                            handleCompleteLesson();
+                            result = { success: true, message: "Advancing to next lesson." };
+                        } else {
+                             result = { error: `Unknown action: ${action}` };
+                        }
                         break;
                     default:
                          result = { error: `Unknown tool: ${call.name}` };
@@ -77,54 +125,27 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
             responses.push({ id: call.id, name: call.name, response: result });
         }
         return responses;
-    }, []);
-
-    // Keep a ref for editor code to avoid stale closures in tool calls
-    const editorCodeRef = useRef(editorCode);
-    useEffect(() => {
-        editorCodeRef.current = editorCode;
-    }, [editorCode]);
+    }, [handleRunCode, handleResetCode, handleCompleteLesson]);
 
     const onStreamMessage = useCallback((newTranscript: Transcript) => {
         setTranscript(newTranscript);
     }, []);
 
     const { 
-        isSessionActive, isConnecting, isListening, isSpeaking, startSession, stopSession, sessionError 
+        isSessionActive, isConnecting, isListening, isSpeaking, startSession, stopSession, sessionError, isMuted, toggleMute
     } = useLiveTutor(onStreamMessage, handleToolCall, progress, currentLesson);
 
-    // --- Event Handlers ---
-
-    const handleRunCode = () => {
-        setConsoleOutput([]); // Clear previous output
-        executeCodeSafely(editorCode, (log) => {
-            setConsoleOutput(prev => [...prev, log]);
-        });
-    };
-
+    // --- Event Handlers for UI Buttons ---
     const handleRunTests = (): TestResult[] => {
         if (!currentLesson || currentLesson.content.exercises.length === 0) return [];
         const exercise = currentLesson.content.exercises[0];
         return executeTests(editorCode, exercise.tests);
     }
 
-    const handleResetCode = () => {
+    const handleResetCodeUI = () => {
         if (confirm("Are you sure you want to reset your code?")) {
-             setEditorCode(`// ${currentLesson?.title}\n// ${currentLesson?.objectives[0]}\n\n`);
-             setConsoleOutput([]);
+             handleResetCode();
         }
-    };
-
-    const handleCompleteLesson = async () => {
-        if (!currentLesson) return;
-        setIsCompletingLesson(true);
-        // In a real app, we'd might ask the AI to summarize memory updates here before completing.
-        // For now, just use the static ones from the lesson.
-        await completeLesson(currentLesson.id, currentLesson.memoryUpdates.conceptsMastered);
-        
-        // The effect above will switch the lesson, but let's clear output
-        setConsoleOutput([]);
-        setIsCompletingLesson(false);
     };
 
     const handleSelectLesson = (lessonId: string) => {
@@ -180,6 +201,8 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
                             stopSession={stopSession}
                             transcript={transcript}
                             sessionError={sessionError}
+                            isMuted={isMuted}
+                            toggleMute={toggleMute}
                          />
                     </div>
                 </main>
@@ -187,7 +210,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
 
             <LearningFooter 
                 onRun={handleRunCode}
-                onReset={handleResetCode}
+                onReset={handleResetCodeUI}
                 onComplete={handleCompleteLesson}
                 isCompleting={isCompletingLesson}
             />
