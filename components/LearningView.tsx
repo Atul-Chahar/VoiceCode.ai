@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { FunctionCall, FunctionResponse } from "@google/genai";
 import { Course, Lesson, Transcript, ConsoleOutput, TestResult } from '../types';
@@ -20,14 +19,28 @@ interface LearningViewProps {
 const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
   const { progress, updateProgress, completeLesson } = useCourseProgress(course.id);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Initialize sidebar closed on mobile, open on desktop
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
 
   const [editorCode, setEditorCode] = useState('// Your AI tutor will write code here...');
   const [consoleOutput, setConsoleOutput] = useState<ConsoleOutput[]>([]);
   const [transcript, setTranscript] = useState<Transcript>({ user: '', ai: '', isFinal: false });
 
+  // Handle window resize to auto-manage sidebar state
+  useEffect(() => {
+      const handleResize = () => {
+          if (window.innerWidth >= 768) {
+              setIsSidebarOpen(true);
+          } else {
+              setIsSidebarOpen(false);
+          }
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const typeCode = (code: string) => {
-    // A small delay to ensure the state update from setEditorCode('') is processed
     setTimeout(() => {
         let i = 0;
         const interval = setInterval(() => {
@@ -42,7 +55,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
   };
 
   const handleRunCode = useCallback(() => {
-    setConsoleOutput([]); // Clear previous output before running
+    setConsoleOutput([]); 
     executeCodeSafely(editorCode, (output) => {
         setConsoleOutput(prev => [...prev, output]);
     });
@@ -52,7 +65,6 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
       if (!currentLesson || !currentLesson.content.exercises || currentLesson.content.exercises.length === 0) {
           return [];
       }
-      // Currently only running tests for the first exercise for simplicity
       return executeTests(editorCode, currentLesson.content.exercises[0].tests);
   }, [editorCode, currentLesson]);
 
@@ -61,8 +73,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
       for (const fc of functionCalls) {
           switch (fc.name) {
               case 'writeCode':
-                  setEditorCode(''); // Clear editor before typing new code
-                  // TS Fix: Safely access fc.args and provide fallback
+                  setEditorCode('');
                   typeCode((fc.args?.code as string) || '');
                   responses.push({ id: fc.id, name: fc.name, response: { result: "Code written successfully." } });
                   break;
@@ -83,11 +94,18 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
   }, []);
   
   useEffect(() => {
-    const lesson = course.modules
-      .flatMap(m => m.lessons)
-      .find(l => l.id === progress.currentLessonId);
-    setCurrentLesson(lesson || null);
-  }, [progress.currentLessonId, course]);
+    if (progress.currentLessonId) {
+        const lesson = course.modules
+          .flatMap(m => m.lessons)
+          .find(l => l.id === progress.currentLessonId);
+        setCurrentLesson(lesson || null);
+    } else {
+         const firstLesson = course.modules[0]?.lessons[0];
+         if (firstLesson) {
+             updateProgress({ currentLessonId: firstLesson.id });
+         }
+    }
+  }, [progress.currentLessonId, course, updateProgress]);
 
   const { 
     isSessionActive, 
@@ -99,26 +117,6 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
     sessionError
   } = useLiveTutor(onStreamMessage, handleToolCall, progress, currentLesson);
   
-  const handleCompleteLesson = () => {
-      const nextLesson = getNextLesson();
-      if(nextLesson && currentLesson){
-        completeLesson(currentLesson.id, nextLesson.id);
-      } else if (currentLesson) {
-         // Mark final lesson as complete even if no next lesson
-         completeLesson(currentLesson.id, currentLesson.id);
-         alert("Congratulations! You've completed the course!");
-         navigateTo('dashboard');
-      }
-  }
-  
-  const handleLessonClick = (lessonId: string) => {
-      updateProgress({ currentLessonId: lessonId });
-      // Optionally close sidebar on mobile when a lesson is selected
-      if (window.innerWidth < 768) {
-          setIsSidebarOpen(false);
-      }
-  };
-
   const getNextLesson = (): Lesson | null => {
     const allLessons = course.modules.flatMap(m => m.lessons);
     const currentIndex = allLessons.findIndex(l => l.id === currentLesson?.id);
@@ -128,8 +126,35 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
     return null;
   }
 
+  const handleCompleteLesson = async () => {
+      if (!currentLesson) return;
+      const nextLesson = getNextLesson();
+      if (nextLesson) {
+        await completeLesson(currentLesson.id, nextLesson.id);
+      } else {
+         await completeLesson(currentLesson.id, currentLesson.id);
+         alert(`Congratulations! You've completed the ${course.title} course!`);
+         navigateTo('dashboard');
+      }
+  }
+  
+  const handleLessonClick = async (lessonId: string) => {
+      await updateProgress({ currentLessonId: lessonId });
+      if (window.innerWidth < 768) {
+          setIsSidebarOpen(false);
+      }
+  };
+
   return (
-    <div className="flex h-screen bg-[#0D0D0D] text-gray-200 font-sans">
+    <div className="fixed inset-0 bg-[#0D0D0D] text-gray-200 font-sans flex overflow-hidden">
+      {/* Mobile Sidebar Backdrop */}
+      {isSidebarOpen && (
+          <div 
+              className="md:hidden fixed inset-0 bg-black/80 z-30 backdrop-blur-sm transition-opacity"
+              onClick={() => setIsSidebarOpen(false)}
+          />
+      )}
+
       <RoadmapSidebar
         course={course}
         completedLessons={progress.completedLessons}
@@ -139,7 +164,8 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
         setIsOpen={setIsSidebarOpen}
         onLessonClick={handleLessonClick}
       />
-      <main className="flex flex-col flex-grow relative transition-all duration-300" style={{ marginLeft: isSidebarOpen ? '20rem' : '0' }}>
+
+      <main className={`flex flex-col flex-grow relative h-full transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : ''} w-full`}>
         <LearningHeader 
             lessonTitle={currentLesson?.title || 'Loading...'} 
             courseTitle={course.title}
@@ -147,26 +173,33 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
             isSidebarOpen={isSidebarOpen}
             navigateTo={navigateTo}
         />
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-hidden">
-          <ConversationPanel 
-            isSessionActive={isSessionActive}
-            isConnecting={isConnecting}
-            isListening={isListening}
-            isSpeaking={isSpeaking}
-            startSession={startSession}
-            stopSession={stopSession}
-            transcript={transcript}
-            sessionError={sessionError}
-          />
-          <CodeWorkspace 
-            code={editorCode}
-            // TS Fix: Handle potential undefined value from editor on change
-            onCodeChange={(val) => setEditorCode(val || '')}
-            output={consoleOutput}
-            exercises={currentLesson?.content.exercises || []}
-            onRunTests={handleRunTests}
-          />
+        
+        {/* Main Content Area - Flex col on mobile, Grid on desktop */}
+        <div className="flex-grow flex flex-col md:grid md:grid-cols-2 gap-4 p-2 md:p-4 overflow-hidden min-h-0">
+          {/* On mobile, give chat ~35% height, code ~65% height. On desktop, they are equal columns. */}
+          <div className="h-[35%] md:h-auto min-h-0 flex-shrink-0 md:flex-shrink">
+               <ConversationPanel 
+                isSessionActive={isSessionActive}
+                isConnecting={isConnecting}
+                isListening={isListening}
+                isSpeaking={isSpeaking}
+                startSession={startSession}
+                stopSession={stopSession}
+                transcript={transcript}
+                sessionError={sessionError}
+              />
+          </div>
+          <div className="flex-1 md:h-auto min-h-0">
+              <CodeWorkspace 
+                code={editorCode}
+                onCodeChange={(val) => setEditorCode(val || '')}
+                output={consoleOutput}
+                exercises={currentLesson?.content.exercises || []}
+                onRunTests={handleRunTests}
+              />
+          </div>
         </div>
+
         <LearningFooter 
             onComplete={handleCompleteLesson}
             onRun={handleRunCode}

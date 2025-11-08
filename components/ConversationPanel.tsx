@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Transcript } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,8 +26,6 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 }) => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'chat' | 'notes'>('chat');
-    
-    // Use the new hook for notes management
     const { notes, updateNotes, isLoading: isNotesLoading, isSaving } = useUserNotes();
 
     const handleMicClick = () => {
@@ -40,107 +37,110 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
     };
 
     let micButtonState = 'idle';
-    let micButtonText = 'Start Session';
-
-    if (isConnecting) {
-        micButtonState = 'connecting';
-        micButtonText = 'Connecting...';
-    } else if (sessionError) {
-        micButtonState = 'error';
-        micButtonText = 'Retry Session';
-    } else if (isSessionActive) {
-        if (isSpeaking) {
-            micButtonState = 'speaking';
-            micButtonText = "AI is speaking...";
-        } else if (isListening) {
-            micButtonState = 'listening';
-            micButtonText = 'Listening...';
-        } else {
-            micButtonState = 'active';
-            micButtonText = 'Session Active';
-        }
+    if (isConnecting) micButtonState = 'connecting';
+    else if (sessionError) micButtonState = 'error';
+    else if (isSessionActive) {
+        if (isSpeaking) micButtonState = 'speaking';
+        else if (isListening) micButtonState = 'listening';
+        else micButtonState = 'active';
     }
 
-    const statusText = sessionError || micButtonText;
+    const getStatusText = () => {
+        if (sessionError) return sessionError;
+        if (isConnecting) return 'Connecting...';
+        if (isSpeaking) return 'AI Speaking...';
+        if (isListening) return 'Listening...';
+        if (isSessionActive) return 'Session Active';
+        return 'Tap to Start';
+    }
 
     return (
-        <div className="bg-[#181818] rounded-lg flex flex-col h-full border border-[#262626] overflow-hidden">
-            <header className="flex border-b border-[#262626] bg-[#0D0D0D]">
+        <div className="bg-[#181818] rounded-xl flex flex-col h-full border border-[#262626] overflow-hidden shadow-sm">
+            <header className="flex border-b border-[#262626] bg-[#131313] flex-shrink-0">
                 <button
                     onClick={() => setActiveTab('chat')}
-                    className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'chat' ? 'bg-[#181818] text-brand-green' : 'text-gray-400 hover:text-gray-200 hover:bg-[#181818]/50'}`}
+                    className={`flex-1 py-2.5 text-xs md:text-sm font-semibold transition-colors ${activeTab === 'chat' ? 'text-brand-green bg-[#1A1A1A]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1A1A]/50'}`}
                 >
-                    <i className="fas fa-comment-alt mr-2"></i> Conversational Tutor
+                    <i className="fas fa-comment-alt mr-2"></i> Tutor
                 </button>
                 <button
                     onClick={() => setActiveTab('notes')}
-                    className={`flex-1 py-3 text-sm font-semibold transition-colors border-l border-[#262626] ${activeTab === 'notes' ? 'bg-[#181818] text-brand-green' : 'text-gray-400 hover:text-gray-200 hover:bg-[#181818]/50'}`}
+                    className={`flex-1 py-2.5 text-xs md:text-sm font-semibold transition-colors border-l border-[#262626] ${activeTab === 'notes' ? 'text-brand-green bg-[#1A1A1A]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1A1A]/50'}`}
                 >
-                    <i className="fas fa-sticky-note mr-2"></i> My Notes
-                    {isSaving && <span className="ml-2 text-xs opacity-50 animate-pulse">Saving...</span>}
+                    <i className="fas fa-sticky-note mr-2"></i> Notes
+                    {isSaving && <span className="ml-2 opacity-50 animate-pulse"><i className="fas fa-sync fa-spin"></i></span>}
                 </button>
             </header>
 
             {activeTab === 'chat' ? (
                 <div className="flex-grow flex flex-col min-h-0">
                     {/* Transcription Area */}
-                    <div className="flex-grow p-4 overflow-y-auto min-h-0">
-                        <div className="text-gray-400 mb-4 h-1/2 overflow-y-auto p-2 rounded-md bg-[#0D0D0D]">
-                            <p className="font-semibold text-gray-200 mb-2">You said:</p>
-                            <p className="italic">{transcript.user || '...'}</p>
-                        </div>
-                        <div className="text-brand-green h-1/2 overflow-y-auto p-2 rounded-md bg-[#0D0D0D]">
-                            <p className="font-semibold text-gray-200 mb-2">AI said:</p>
-                            <p>{transcript.ai || '...'}</p>
-                        </div>
+                    <div className="flex-grow p-3 md:p-4 overflow-y-auto min-h-0 space-y-4 custom-scrollbar flex flex-col">
+                        {transcript.user && (
+                             <div className="self-end max-w-[85%]">
+                                <p className="text-[10px] uppercase text-gray-500 mb-1 text-right font-bold tracking-wider">You</p>
+                                <div className="bg-[#262626] text-gray-200 p-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-sm break-words">
+                                    {transcript.user}
+                                </div>
+                            </div>
+                        )}
+                        {transcript.ai && (
+                            <div className="self-start max-w-[85%]">
+                                 <p className="text-[10px] uppercase text-brand-green mb-1 font-bold tracking-wider">AI Tutor</p>
+                                 <div className="bg-[#B9FF66]/10 text-[#B9FF66] p-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed shadow-sm break-words border border-[#B9FF66]/20">
+                                    {transcript.ai}
+                                </div>
+                            </div>
+                        )}
+                        {!transcript.user && !transcript.ai && !isSessionActive && (
+                            <div className="flex-grow flex items-center justify-center text-gray-600 text-center p-6">
+                                <div>
+                                    <i className="fas fa-headset text-4xl mb-4 opacity-20"></i>
+                                    <p className="text-sm">Start a session and just talk naturally.<br/>I'm ready to help you code.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Controls Area */}
-                    <div className="p-4 border-t border-[#262626] flex flex-col items-center justify-center bg-[#181818]">
-                        <div className="mb-4">
+                    <div className="p-3 md:p-4 border-t border-[#262626] bg-[#131313] flex-shrink-0">
+                        <div className="flex items-center gap-4">
                             <button 
                                 onClick={handleMicClick} 
                                 disabled={isConnecting}
-                                className={`w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl transition-all duration-300 transform focus:outline-none focus:ring-4 focus:ring-brand-green/50
-                                    ${micButtonState === 'idle' && 'bg-gray-600 hover:bg-gray-500'}
-                                    ${micButtonState === 'connecting' && 'bg-gray-500 cursor-not-allowed animate-pulse'}
-                                    ${(micButtonState === 'active' || micButtonState === 'listening') && 'bg-brand-green shadow-lg shadow-brand-green/20'}
-                                    ${micButtonState === 'speaking' && 'bg-blue-500 shadow-lg shadow-blue-500/20'}
-                                    ${micButtonState === 'error' && 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20'}
+                                className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-300 flex-shrink-0 shadow-lg
+                                    ${micButtonState === 'idle' && 'bg-[#262626] text-white hover:bg-[#333]'}
+                                    ${micButtonState === 'connecting' && 'bg-[#262626] text-gray-500 cursor-not-allowed animate-pulse'}
+                                    ${(micButtonState === 'active' || micButtonState === 'listening') && 'bg-brand-green text-black shadow-brand-green/20'}
+                                    ${micButtonState === 'speaking' && 'bg-blue-500 text-white shadow-blue-500/20'}
+                                    ${micButtonState === 'error' && 'bg-red-500/20 text-red-500 border border-red-500/50'}
                                 `}
-                                aria-label={isSessionActive ? "Stop voice session" : "Start voice session"}
                             >
-                                <i className={`fas ${isConnecting ? 'fa-spinner fa-spin' : 'fa-microphone'}`}></i>
+                                <i className={`fas ${isConnecting ? 'fa-spinner fa-spin' : micButtonState === 'speaking' ? 'fa-volume-up animate-pulse' : 'fa-microphone'}`}></i>
                             </button>
-                             <p className={`mt-3 text-center text-sm h-5 ${sessionError ? 'text-red-400' : 'text-gray-400'}`}>{statusText}</p>
-                        </div>
-
-                        <div className="w-full flex space-x-2">
-                            <input
-                                type="text"
-                                placeholder="Or type your message here..."
-                                className="flex-grow bg-[#262626] border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-brand-green text-sm"
-                                disabled={isSessionActive}
-                            />
-                            <button
-                                disabled={isSessionActive}
-                                className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed"
-                            >
-                                Send
-                            </button>
+                            <div className="flex-grow min-w-0">
+                                 <p className={`text-xs md:text-sm font-bold truncate mb-1 ${sessionError ? 'text-red-400' : isSessionActive ? 'text-brand-green' : 'text-gray-400'}`}>
+                                     {getStatusText()}
+                                 </p>
+                                 <div className="h-1 bg-[#262626] rounded-full overflow-hidden">
+                                     {isSessionActive && !sessionError && (
+                                         <div className={`h-full rounded-full transition-all duration-500 ${isSpeaking ? 'w-full bg-blue-500' : isListening ? 'w-2/3 bg-brand-green animate-pulse' : 'w-full bg-brand-green'}`}></div>
+                                     )}
+                                 </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             ) : (
-                <div className="flex-grow p-4 min-h-0 bg-[#181818] relative">
+                <div className="flex-grow p-0 min-h-0 relative">
                     {isNotesLoading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-[#181818]/80 z-10">
                             <i className="fas fa-spinner fa-spin text-brand-green text-2xl"></i>
                         </div>
                     )}
                     <textarea
-                        className="w-full h-full bg-[#0D0D0D] border border-[#262626] rounded-lg p-4 text-gray-300 resize-none focus:outline-none focus:border-brand-green transition-colors font-mono text-sm placeholder-gray-600"
-                        placeholder={user ? "Type your notes here... They automatically save to the cloud." : "Type your notes here... (Local storage only until you sign in)"}
+                        className="w-full h-full bg-[#0D0D0D] border-0 p-4 text-gray-300 resize-none focus:ring-0 font-mono text-sm placeholder-gray-700 leading-relaxed"
+                        placeholder={user ? "## My Notes\n- Jot down key concepts here..." : "Sign in to save your notes to the cloud."}
                         value={notes}
                         onChange={(e) => updateNotes(e.target.value)}
                         spellCheck={false}

@@ -22,6 +22,15 @@
             overflow-x: hidden;
         }
 
+        /* Utility to hide scrollbar while keeping functionality */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
         .text-brand-green {
             color: #B9FF66;
         }
