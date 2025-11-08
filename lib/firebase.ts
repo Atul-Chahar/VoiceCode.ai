@@ -1,12 +1,14 @@
 
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import type { Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager,
-  Firestore
+  persistentMultipleTabManager
 } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 // Use (import.meta as any).env to avoid TypeScript errors if Vite types aren't strictly loaded.
