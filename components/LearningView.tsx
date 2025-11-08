@@ -62,8 +62,8 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
           switch (fc.name) {
               case 'writeCode':
                   setEditorCode(''); // Clear editor before typing new code
-                  typeCode(fc.args.code as string);
-                  // The explanation is spoken by the AI, we just need to acknowledge the call
+                  // TS Fix: Safely access fc.args and provide fallback
+                  typeCode((fc.args?.code as string) || '');
                   responses.push({ id: fc.id, name: fc.name, response: { result: "Code written successfully." } });
                   break;
               case 'executeCode':
@@ -160,7 +160,8 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
           />
           <CodeWorkspace 
             code={editorCode}
-            onCodeChange={setEditorCode}
+            // TS Fix: Handle potential undefined value from editor on change
+            onCodeChange={(val) => setEditorCode(val || '')}
             output={consoleOutput}
             exercises={currentLesson?.content.exercises || []}
             onRunTests={handleRunTests}

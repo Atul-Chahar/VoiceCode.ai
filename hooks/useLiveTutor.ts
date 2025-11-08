@@ -41,7 +41,8 @@ export const useLiveTutor = (
   }, [onToolCall]);
 
   const processAudioMessage = useCallback(async (message: LiveServerMessage) => {
-    const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+    // TS Fix: deeper optional chaining for parts array access
+    const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
       if (!outputAudioContextRef.current) {
         outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: OUTPUT_SAMPLE_RATE });
@@ -83,11 +84,13 @@ export const useLiveTutor = (
       }
 
       if (message.serverContent?.inputTranscription) {
-          transcriptRef.current.user = message.serverContent.inputTranscription.text;
+          // TS Fix: Provide fallback string if text is undefined
+          transcriptRef.current.user = message.serverContent.inputTranscription.text || '';
           updated = true;
       }
       if (message.serverContent?.outputTranscription) {
-          transcriptRef.current.ai += message.serverContent.outputTranscription.text;
+          // TS Fix: Provide fallback string if text is undefined
+          transcriptRef.current.ai += message.serverContent.outputTranscription.text || '';
           updated = true;
       }
        if (message.serverContent?.turnComplete) {
