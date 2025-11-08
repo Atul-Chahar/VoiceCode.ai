@@ -2,8 +2,19 @@
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from "@google/genai";
 import { Progress, Lesson } from "../types";
 
-// Initialize standard GenAI client strictly according to guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize strictly according to guidelines, but lazily to prevent top-level browser crashes
+let aiClient: GoogleGenAI | null = null;
+
+function getAiClient(): GoogleGenAI {
+    if (!aiClient) {
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            throw new Error("API_KEY is missing. Please set it in your environment variables.");
+        }
+        aiClient = new GoogleGenAI({ apiKey });
+    }
+    return aiClient;
+}
 
 const writeCodeTool: FunctionDeclaration = {
     name: 'writeCode',
@@ -44,7 +55,9 @@ const readCodeTool: FunctionDeclaration = {
     },
 };
 
-export type LiveSession = Awaited<ReturnType<typeof ai.live.connect>>;
+// Helper type to get the return type of connect, handling the lazy client
+type LiveSessionType = Awaited<ReturnType<GoogleGenAI['live']['connect']>>;
+export type LiveSession = LiveSessionType;
 
 export const startLiveSession = (
     progress: Progress,
@@ -86,7 +99,8 @@ ${lessonProtocol}
 - User History Summary: ${aiMemory.length > 0 ? aiMemory.slice(-3).join('; ') : 'New user.'}
 `;
 
-    return ai.live.connect({
+    // Use the lazy getter here
+    return getAiClient().live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks,
         config: {
