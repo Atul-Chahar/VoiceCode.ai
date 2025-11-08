@@ -75,7 +75,7 @@ function mapFirebaseAuthErrorMessage(errorCode: string): string {
         case 'auth/operation-not-allowed':
              return 'This sign-in method is not enabled in Firebase Console.';
         case 'auth/unauthorized-domain':
-             return 'This domain is not authorized in Firebase Console.';
+             return `Domain not authorized. Go to Firebase Console > Auth > Settings > Authorized Domains and add: ${window.location.hostname}`;
         default:
             return 'An authentication error occurred. Please try again.';
     }

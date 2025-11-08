@@ -1,8 +1,14 @@
-
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from "@google/genai";
 import { Progress, Lesson } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Strictly use process.env.API_KEY per @google/genai guidelines
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
+    console.error("MISSING API KEY: Ensure process.env.API_KEY is accessible.");
+}
+
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
 const writeCodeTool: FunctionDeclaration = {
     name: 'writeCode',
