@@ -1,33 +1,34 @@
 
-import * as firebaseApp from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseOptions, FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager 
+  persistentMultipleTabManager,
+  Firestore
 } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
-// Using standard process.env as defined in vite.config.ts define block
-const firebaseConfig = {
-    apiKey: process.env.API_KEY || "AIzaSyDdEk0fQ0JqUilEFKYQk4OczhkhpqNFwNw",
-    authDomain: "voicecode-ai-c143f.firebaseapp.com",
-    projectId: "voicecode-ai-c143f",
-    storageBucket: "voicecode-ai-c143f.firebasestorage.app",
-    messagingSenderId: "242245066171",
-    appId: "1:242245066171:web:085e1e765eaa06baa0389e",
-    measurementId: "G-K994KG7TQT"
+// Use (import.meta as any).env to avoid TypeScript errors if Vite types aren't strictly loaded.
+const firebaseConfig: FirebaseOptions = {
+    apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY || "AIzaSyDdEk0fQ0JqUilEFKYQk4OczhkhpqNFwNw",
+    authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN || "voicecode-ai-c143f.firebaseapp.com",
+    projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID || "voicecode-ai-c143f",
+    storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET || "voicecode-ai-c143f.firebasestorage.app",
+    messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "242245066171",
+    appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID || "1:242245066171:web:085e1e765eaa06baa0389e",
+    measurementId: (import.meta as any).env?.VITE_FIREBASE_MEASUREMENT_ID || "G-K994KG7TQT"
 };
 
-// Initialize Firebase
-// using namespace import to avoid potential 'no exported member' TS issues in some setups
-const app = firebaseApp.initializeApp(firebaseConfig);
+// Initialize Firebase singleton.
+// Prevents re-initialization errors during hot-reloads in development.
+const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize and export services
-export const auth = getAuth(app);
+export const auth: Auth = getAuth(app);
 
 // Initialize Firestore with persistent local cache for offline support
-export const db = initializeFirestore(app, {
+export const db: Firestore = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })

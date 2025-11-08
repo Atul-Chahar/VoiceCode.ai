@@ -1,4 +1,3 @@
-
 import { 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
@@ -57,6 +56,11 @@ export const authService = {
 
 // Helper to make standard Firebase error codes more user-friendly
 function mapFirebaseAuthErrorMessage(errorCode: string): string {
+    // Handle long-form API errors that sometimes bubble up
+    if (errorCode.includes('identity-toolkit-api')) {
+        return 'Project Configuration Error: Identity Toolkit API is disabled in Google Cloud Console.';
+    }
+
     switch (errorCode) {
         case 'auth/invalid-email':
             return 'Invalid email address format.';
@@ -73,10 +77,15 @@ function mapFirebaseAuthErrorMessage(errorCode: string): string {
         case 'auth/popup-closed-by-user':
             return 'Sign-in popup was closed before completion.';
         case 'auth/operation-not-allowed':
-             return 'This sign-in method is not enabled in Firebase Console.';
+             return 'Sign-in method not enabled. Enable Email/Google in Firebase Console.';
         case 'auth/unauthorized-domain':
-             return `Domain not authorized. Go to Firebase Console > Auth > Settings > Authorized Domains and add: ${window.location.hostname}`;
+             return `Domain not authorized. Add ${window.location.hostname} to Firebase Console > Auth > Settings.`;
+        case 'auth/network-request-failed':
+            return 'Network error. Check your connection or firewall.';
+        case 'auth/internal-error':
+            return 'Internal Firebase error. Check your API keys and configuration.';
         default:
-            return 'An authentication error occurred. Please try again.';
+            // IMPORTANT: Include the raw error code for debugging generic errors
+            return `Authentication Error (${errorCode}). Please try again.`;
     }
 }
