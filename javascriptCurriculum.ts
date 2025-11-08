@@ -11,441 +11,254 @@ export const rawCurriculumData = {
         "lessons": [
           {
             "id": "js-vars-101",
-            "title": "Variables: let, const, and var",
+            "title": "Variables (let, const, var) & Scope",
             "objectives": [
               "Understand variables as labeled containers for data",
               "Distinguish between let (reassignable) and const (immutable binding)",
-              "Know why 'var' is generally avoided in modern JS"
+              "Understand basic block scope vs global scope",
+              "Know why 'var' and hoisting can be confusing"
             ],
             "prerequisites": [],
             "timeEstimateMin": 25,
             "content": {
               "explanations": [
-                "Think of variables as labeled boxes where you can store information to use later.",
-                "In modern JavaScript, we primarily use two labels: 'const' for boxes whose contents won't be completely swapped out, and 'let' for boxes that might need new contents later.",
-                "We avoid the older label 'var' because it behaves in confusing ways regarding where it can be accessed (scoping)."
+                "Think of variables like labeled moving boxes. You write a label (the variable name) on the box and put something inside (the value).",
+                "'const' is like a museum display case. Once you put an item in and lock it, you can't swap it out for a different item later.",
+                "'let' is like an open cardboard box. You can take the old item out and put a new one in whenever you want.",
+                "Scope is like rooms in a house. A variable created inside a specific room (like inside an 'if' block) usually can't be seen from the hallway outside."
               ],
               "demos": [
                 {
-                  "code": "let userAge = 25;\nconsole.log(userAge); // Outputs: 25\n\nuserAge = 26; // Birthday happens!\nconsole.log(userAge); // Outputs: 26\n\nconst birthYear = 1998;\nconsole.log(birthYear);\n// birthYear = 1999; // This would cause an error!",
+                  "code": "let userAge = 25;\nuserAge = 26; // Okay! Swapped contents of the 'let' box.\n\nconst birthYear = 1998;\n// birthYear = 1999; // Error! Cannot unlock a 'const' display case.\n\nif (true) {\n  // This variable only exists inside this 'room' (block)\n  let blockScoped = \"Visible only here\";\n  console.log(blockScoped);\n}\n// console.log(blockScoped); // Error: The variable doesn't exist out here in the hallway.",
                   "explainByLine": true
                 }
               ],
               "oralQuestions": [
                 {
                   "type": "recall",
-                  "prompt": "If you're creating a variable for someone's date of birth, which keyword should you use and why?"
+                  "prompt": "If you want to create a box that you NEVER want to swap the contents of, which keyword do you use?"
                 },
                 {
                   "type": "apply",
-                  "prompt": "I've declared 'const score = 0'. What happens if I later try to do 'score = score + 1'?"
+                  "prompt": "I declared a variable inside an 'if' statement block. Can I use that same variable later outside of that block? Why or why not?"
                 }
               ],
               "debugging": [
                 {
-                  "buggyCode": "const currentTemperature = 72;\ncurrentTemperature = 75;\nconsole.log(\"Temp is now:\", currentTemperature);",
+                  "buggyCode": "const currentTemp = 72;\ncurrentTemp = 75; // Error here\nconsole.log(currentTemp);",
                   "hints": [
-                    "Read the error message carefully: 'Assignment to constant variable'.",
-                    "Look at how you declared 'currentTemperature'.",
-                    "If a value needs to change over time, 'const' might be too restrictive."
+                    "Read the error: 'Assignment to constant variable'.",
+                    "You used 'const', which is like our locked museum case.",
+                    "If the temperature needs to change, we need an open box. Try 'let'."
                   ],
-                  "solution": "let currentTemperature = 72;\ncurrentTemperature = 75;\nconsole.log(\"Temp is now:\", currentTemperature);"
+                  "solution": "let currentTemp = 72;\ncurrentTemp = 75;\nconsole.log(currentTemp);"
                 }
               ],
               "exercises": [
                 {
-                  "prompt": "Declare a 'const' variable called 'myname' with your name as a string, and a 'let' variable called 'myage' with a number.",
-                  "tests": [
-                    "typeof myname === 'string'",
-                    "typeof myage === 'number'"
-                  ]
+                  "prompt": "Declare a 'const' variable named 'myName' with your name string, and a 'let' variable named 'myAge' with your age number.",
+                  "tests": ["typeof myName === 'string'", "typeof myAge === 'number'"]
                 }
               ],
               "assessment": {
                 "questions": [
                   {
                     "type": "mcq",
-                    "prompt": "Which declaration should be your default choice in modern JS?",
-                    "choices": ["var", "let", "const"],
-                    "answer": "const"
-                  },
-                  {
-                    "type": "predict",
-                    "prompt": "What will this output? let a = 5; let b = a; a = 10; console.log(b);",
-                    "choices": ["5", "10", "Error"],
-                    "answer": "5"
+                    "prompt": "Which declaration represents a value that can be changed later?",
+                    "choices": ["const", "let", "immutable"],
+                    "answer": "let"
                   }
                 ],
-                "passCriteria": {
-                  "minCorrect": 2
-                }
+                "passCriteria": { "minCorrect": 1 }
               }
             },
             "memoryUpdates": {
-              "conceptsMastered": ["variable declaration", "const vs let", "assignment"],
-              "mistakeWatchlist": ["const reassignment error", "using var unnecessarily"]
+              "conceptsMastered": ["const vs let", "scope basics"],
+              "mistakeWatchlist": ["const reassignment", "scope access errors"]
             },
             "nextLesson": "js-types-101"
           },
           {
             "id": "js-types-101",
-            "title": "Data Types & typeof",
+            "title": "Types, Coercion & Equality",
             "objectives": [
-              "Identify primitive types: string, number, boolean, null, undefined",
-              "Use the 'typeof' operator to inspect values"
+              "Identify primitives: string, number, boolean, null, undefined",
+              "Use 'typeof' to inspect values",
+              "Understand coercion and why === is preferred over =="
             ],
             "prerequisites": ["js-vars-101"],
-            "timeEstimateMin": 20,
+            "timeEstimateMin": 30,
             "content": {
               "explanations": [
-                "In JavaScript, every value has a 'type'. It's like knowing if something is a text, a number, or a true/false switch.",
-                "We can ask JavaScript what type something is by using the 'typeof' operator before the value."
+                "In the real world, data comes in different forms: text on paper, numbers on a calculator, or a light switch (on/off). JavaScript is the same.",
+                "A 'String' is just text. A 'Number' is for math. A 'Boolean' is just a true/false light switch.",
+                "Sometimes JS tries to be helpful and combine incompatible types, like adding the word 'apple' to the number 5. This is called 'coercion', and it often causes bugs.",
+                "Always use the triple equals (===). It's like asking 'Are these EXACTLY identical twins?' whereas double equals (==) just asks 'Do these look kind of similar?'"
               ],
               "demos": [
                 {
-                  "code": "let message = \"Hello World\";\nlet count = 42;\nlet isActive = true;\n\nconsole.log(typeof message); // \"string\"\nconsole.log(typeof count);   // \"number\"\nconsole.log(typeof isActive);// \"boolean\"",
-                  "explainByLine": true
+                  "code": "let num = 5;\nlet str = \"5\";\n\n// Double equals is lenient (bad for precision)\nconsole.log(num == str);  // true (JS converts the string \"5\" to number 5 to help)\n\n// Triple equals is strict (good!)\nconsole.log(num === str); // false (One is a number, one is text. Not identical.)\n\nconsole.log(10 + \"20\"); // \"1020\" -> It glued them together as text instead of adding!"
                 }
               ],
               "oralQuestions": [
-                {
-                  "type": "predict",
-                  "prompt": "What do you think 'typeof 3.14' will return?"
-                },
-                {
-                  "type": "recall",
-                  "prompt": "What's the difference between 'undefined' and 'null' conceptually?"
-                }
+                { "type": "predict", "prompt": "If I have the number 10 and I add the string '20' to it, what will JavaScript likely do?" },
+                { "type": "recall", "prompt": "Why do we prefer triple equals (===) over double equals (==)?" }
               ],
               "debugging": [
-                {
-                  "buggyCode": "let age = \"25\";\n// We want to add 5 years\nlet futureAge = age + 5;\nconsole.log(\"In 5 years you will be:\", futureAge); // outputs \"255\" instead of 30",
-                  "hints": [
-                    "Look closely at the quotes around 25.",
-                    "Check the type of 'age' using typeof.",
-                    "When you add a number to a string, JavaScript sticks them together instead of doing math."
-                  ],
-                  "solution": "let age = 25; // Removed quotes to make it a number\nlet futureAge = age + 5;\nconsole.log(\"In 5 years you will be:\", futureAge);"
-                }
+                 {
+                  "buggyCode": "let userLevel = \"1\"; // It came from a text input\nif (userLevel === 1) {\n  console.log(\"Level 1 access granted!\");\n} else {\n  console.log(\"Access denied.\");\n}\n// Why is access denied even though it looks like 1?",
+                  "hints": ["Check the quotes around userLevel's value. Is it a number or a string?", "=== checks strictly. Is a text \"1\" identical to the number 1?", "Try changing the variable to be a real number, or compare against a string."],
+                  "solution": "let userLevel = 1; // Changed to number\nif (userLevel === 1) {\n  console.log(\"Level 1 access granted!\");\n} else {\n  console.log(\"Access denied.\");\n}"
+                 }
               ],
-              "exercises": [
-                {
-                  "prompt": "Create a variable 'isDone' and set it to a boolean value. Log its type.",
-                  "tests": ["typeof isDone === 'boolean'"]
-                }
-              ],
-              "assessment": {
-                "questions": [
-                  {
-                    "type": "predict",
-                    "prompt": "typeof \"true\"",
-                    "choices": ["boolean", "string", "undefined"],
-                    "answer": "string"
-                  }
-                ],
-                "passCriteria": { "minCorrect": 1 }
-              }
+              "exercises": [],
+              "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
             },
             "memoryUpdates": {
-              "conceptsMastered": ["primitive types", "typeof operator", "string vs number"],
-              "mistakeWatchlist": ["string coercion unexpected results"]
+              "conceptsMastered": ["primitives", "strict equality", "coercion awareness"],
+              "mistakeWatchlist": ["using == instead of ==="]
             },
-            "nextLesson": "js-strings-101"
+             "nextLesson": "js-strings-101"
           },
-           {
+          {
             "id": "js-strings-101",
-            "title": "Strings & Template Literals",
+            "title": "Strings, Numbers, & Templates",
             "objectives": [
-              "Understand string basics and concatenation",
-              "Master template literals with backticks (`)"
+              "Manipulate strings and numbers",
+              "Understand NaN (Not a Number) and Infinity",
+              "Master template literals for combining text and variables"
             ],
             "prerequisites": ["js-types-101"],
-            "timeEstimateMin": 20,
+            "timeEstimateMin": 25,
             "content": {
               "explanations": [
-                "Strings are pieces of text. We used to glue them together with '+', which could get messy.",
-                "Template literals use backticks (`) and allow us to inject variables directly using ${variableName}. It's like a fill-in-the-blanks sentence."
+                "Template literals (using backticks `) are like 'Mad Libs' or fill-in-the-blanks forms. You write standard text, but leave labeled slots ${} for data to be dropped in later.",
+                "NaN stands for 'Not a Number'. It's what you get when you ask a calculator to do something impossible, like 'divide apple by 7'."
               ],
               "demos": [
                 {
-                  "code": "const user = \"Sarah\";\nconst tasks = 5;\n\n// Old way (messy)\nconsole.log(\"Hello \" + user + \", you have \" + tasks + \" tasks.\");\n\n// New way (clean)\nconsole.log(`Hello ${user}, you have ${tasks} tasks.`);",
-                  "explainByLine": true
+                  "code": "const name = \"Kai\";\nconst score = 100;\n\n// Old way (messy gluing)\nconsole.log(\"Player \" + name + \" has score: \" + score);\n\n// Template literal way (fill-in-the-blanks)\nconsole.log(`Player ${name} has score: ${score}`);\n\n// Impossible math\nlet result = \"taco\" * 10;\nconsole.log(result); // NaN (Not a Number)"
                 }
               ],
-              "oralQuestions": [
-                {
-                  "type": "recall",
-                  "prompt": "What specific character do you need to use to create a template literal?"
-                },
-                {
-                  "type": "apply",
-                  "prompt": "How would you use a template literal to log 'The total is $10' if you have a variable 'price' equal to 10?"
-                }
-              ],
-              "debugging": [
-                {
-                  "buggyCode": "const name = \"Alex\";\n// Trying to use template literal features with normal quotes\nconsole.log('Hello ${name}'); // Outputs literally: Hello ${name}",
-                  "hints": [
-                    "Look closely at the quotes used around the message.",
-                    "Single quotes (') and double quotes (\") don't support the ${} magic.",
-                    "Try finding the backtick key on your keyboard (usually above Tab)."
-                  ],
-                  "solution": "const name = \"Alex\";\nconsole.log(`Hello ${name}`);"
-                }
-              ],
-              "exercises": [
-                {
-                  "prompt": "Create two variables, 'item' (string) and 'price' (number). Log a sentence using backticks: 'The [item] costs $[price]'.",
-                  "tests": ["// Automated test pending"]
-                }
-              ],
-              "assessment": {
-                "questions": [
-                  {
-                    "type": "mcq",
-                    "prompt": "Which of these is a valid template literal?",
-                    "choices": ["'Value: ${x}'", "\"Value: ${x}\"", "`Value: ${x}`"],
-                    "answer": "`Value: ${x}`"
-                  }
-                ],
-                "passCriteria": { "minCorrect": 1 }
-              }
+              "oralQuestions": [],
+              "debugging": [],
+              "exercises": [],
+              "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
             },
-            "memoryUpdates": {
-              "conceptsMastered": ["template literals", "string interpolation"],
-              "mistakeWatchlist": ["using wrong quotes for templates"]
-            },
+            "memoryUpdates": { "conceptsMastered": ["template literals"], "mistakeWatchlist": [] },
             "nextLesson": "js-conditionals-101"
           }
         ]
       },
       {
         "id": "js-module-2",
-        "title": "Module 2: Control Flow and Functions",
+        "title": "Module 2: Control Flow & Functions",
         "lessons": [
-           {
-            "id": "js-conditionals-101",
-            "title": "Conditionals: if, else, and switch",
-            "objectives": [
-              "Control program flow using if/else statements",
-              "Understand standard comparison operators (>, <, ===)"
-            ],
-            "prerequisites": ["js-types-101"],
-            "timeEstimateMin": 30,
-            "content": {
-              "explanations": [
-                "Code normally runs from top to bottom. Conditionals let it branch, like a fork in the road.",
-                "'if' checks a condition. If it's true, it takes that path. 'else' is the backup path."
-              ],
-              "demos": [
-                {
-                  "code": "let hour = 14; // 2 PM\n\nif (hour < 12) {\n    console.log(\"Good morning!\");\n} else if (hour < 18) {\n    console.log(\"Good afternoon!\");\n} else {\n    console.log(\"Good evening!\");\n}",
-                  "explainByLine": true
-                }
-              ],
-              "oralQuestions": [
-                 { "type": "predict", "prompt": "If 'hour' is 12, which message will correctly log based on my previous code?" },
-                 { "type": "recall", "prompt": "What is the difference between using '=' and '===' in a condition?" }
-              ],
-              "debugging": [
-                {
-                  "buggyCode": "let score = 100;\n// Trying to check if score is perfect\nif (score = 100) {\n    console.log(\"Perfect score!\");\n}\n// Wait, why does this run even if score is 50?",
-                  "hints": [
-                    "Look closely at the 'if' parenthesis.",
-                    "A single '=' means assignment (putting a value in a box), not comparison.",
-                    "You need the strict equality operator."
-                  ],
-                  "solution": "let score = 100;\nif (score === 100) {\n    console.log(\"Perfect score!\");\n}"
-                }
-              ],
-              "exercises": [],
-              "assessment": {
-                "questions": [],
-                "passCriteria": { "minCorrect": 0 }
-              }
-            },
-            "memoryUpdates": {
-              "conceptsMastered": ["if/else", "strict equality"],
-              "mistakeWatchlist": ["assignment vs comparison (= vs ===)"]
-            },
-            "nextLesson": "js-loops-101"
-          },
           {
-            "id": "js-loops-101",
-            "title": "Loops: for, while, and do...while",
+            "id": "js-conditionals-101",
+            "title": "Control Flow: if, else, switch, loops",
             "objectives": [
-              "Understand the purpose of loops (repeating tasks)",
-              "Master the 3 parts of a 'for' loop: init, condition, increment"
+              "Use if/else for decision making",
+              "Use for and while loops for repetition",
+              "Understand for...of (arrays) vs for...in (objects)"
             ],
-            "prerequisites": ["js-conditionals-101"],
-            "timeEstimateMin": 30,
+            "prerequisites": ["js-module-1"],
+            "timeEstimateMin": 35,
             "content": {
               "explanations": [
-                "Loops let us repeat an action without writing the same code over and over.",
-                "A 'for' loop is like a track: you start at a spot (initialization), you keep running as long as a rule is met (condition), and you take a step each time (increment)."
+                "Code usually runs top-to-bottom. Conditionals are forks in the road: 'If it's raining, take umbrella path, else take sunny path.'",
+                "Loops are for repeating chores. 'While there are still dishes in the sink, keep washing.'",
+                "'for...of' is a special loop perfect for going through a list of items one by one."
               ],
               "demos": [
                 {
-                  "code": "// We want to count from 1 to 5\nfor (let i = 1; i <= 5; i++) {\n    console.log(\"Counting:\", i);\n}\nconsole.log(\"Done!\");",
-                  "explainByLine": true
+                  "code": "const weather = \"rainy\";\n\nif (weather === \"rainy\") {\n  console.log(\"Take umbrella\");\n} else {\n  console.log(\"Wear sunglasses\");\n}\n\nconst todoList = ['Learn JS', 'Build App', 'Profit'];\n// Loop through the list\nfor (const task of todoList) {\n  console.log(`Next task: ${task}`);\n}"
                 }
               ],
-              "oralQuestions": [
-                {
-                  "type": "predict",
-                  "prompt": "If I change the condition to 'i < 5' instead of 'i <= 5', what's the last number it will log?"
-                },
-                {
-                  "type": "apply",
-                  "prompt": "How would you change the loop to count DOWN from 10 to 1?"
-                }
-              ],
-              "debugging": [
-                {
-                  "buggyCode": "// Trying to count up to 5...\nfor (let i = 1; i > 5; i++) {\n    console.log(i);\n}\n// Nothing happened! Why?",
-                  "hints": [
-                    "Look at the middle part, the condition: i > 5.",
-                    "What is the initial value of 'i'?",
-                    "Is 1 greater than 5? The loop only runs if true."
-                  ],
-                  "solution": "for (let i = 1; i <= 5; i++) {\n    console.log(i);\n}"
-                }
-              ],
-              "exercises": [
-                {
-                  "prompt": "Write a for loop that logs only EVEN numbers from 0 to 10.",
-                  "tests": []
-                }
-              ],
-              "assessment": {
-                "questions": [
-                  {
-                    "type": "predict",
-                    "prompt": "for(let i=0; i<3; i++) { console.log(i); }",
-                    "choices": ["0, 1, 2", "1, 2, 3", "0, 1, 2, 3"],
-                    "answer": "0, 1, 2"
-                  }
-                ],
-                "passCriteria": { "minCorrect": 1 }
-              }
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
             },
-            "memoryUpdates": {
-              "conceptsMastered": ["for loop structure", "iteration", "loop conditions"],
-              "mistakeWatchlist": ["infinite loops", "off-by-one errors", "incorrect loop condition"]
-            },
+            "memoryUpdates": { "conceptsMastered": ["loops", "conditionals"], "mistakeWatchlist": [] },
             "nextLesson": "js-functions-101"
           },
           {
             "id": "js-functions-101",
-            "title": "Functions: Declarations & Arrows",
+            "title": "Functions, Arrows & 'this'",
             "objectives": [
-              "Define reusable blocks of code with functions",
-              "Understand parameters (inputs) and return values (outputs)",
-              "Learn modern Arrow Function syntax"
+              "Declare functions in standard and arrow syntax",
+              "Understand parameters, return values, and closures",
+              "Intro to 'this' binding differences"
             ],
-            "prerequisites": ["js-loops-101"],
+            "prerequisites": ["js-conditionals-101"],
             "timeEstimateMin": 40,
             "content": {
               "explanations": [
-                "Functions are like recipes. You give them ingredients (parameters), they do cooking steps (the code block), and they give you back a finished dish (return value).",
-                "Arrow functions `() => {}` are a modern, shorter way to write recipes, especially useful for simple tasks."
+                "A Function is a reusable recipe. It lists ingredients it needs (parameters), does cooking steps (the code body), and serves up a finished dish (return value).",
+                "Closures are like a backpack. When a function leaves the place it was created, it takes a backpack containing all the variables that were around it at the time.",
+                "Arrow functions `() => {}` are just a shorter way to write recipes, often used for quick, small tasks."
               ],
               "demos": [
                 {
-                  "code": "// Standard function\nfunction add(a, b) {\n    return a + b;\n}\n\n// Arrow function equivalent\nconst subtract = (a, b) => {\n    return a - b;\n};\n\nconsole.log(\"Add:\", add(5, 3));\nconsole.log(\"Subtract:\", subtract(10, 4));",
-                  "explainByLine": true
+                  "code": "// Standard recipe (function)\nfunction makeSandwich(filling) {\n  return `A delicious ${filling} sandwich`;\n}\n\n// Quick arrow recipe\nconst quickLunch = (food) => `Eating ${food} quickly!`;\n\nconsole.log(makeSandwich(\"turkey\"));\nconsole.log(quickLunch(\"pizza\"));"
                 }
               ],
-              "oralQuestions": [
-                 { "type": "recall", "prompt": "What keyword do we use to send a result back out of a function?" },
-                 { "type": "apply", "prompt": "How would you convert 'function sayHi() {}' into an arrow function?" }
-              ],
-               "debugging": [
-                {
-                  "buggyCode": "function multiply(x, y) {\n    let result = x * y;\n    // Forgot something here!\n}\n\nlet answer = multiply(5, 5);\nconsole.log(answer); // Logs 'undefined'",
-                  "hints": [
-                    "The function calculates the result, but does it send it back?",
-                    "If a function doesn't have a 'return' statement, it returns 'undefined' by default."
-                  ],
-                  "solution": "function multiply(x, y) {\n    let result = x * y;\n    return result;\n}"
-                }
-              ],
-              "exercises": [],
-              "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
             },
-             "memoryUpdates": {
-              "conceptsMastered": ["function declaration", "parameters", "return values", "arrow syntax"],
-              "mistakeWatchlist": ["missing return statement"]
-            },
-            "nextLesson": "js-arrays-101"
+            "memoryUpdates": { "conceptsMastered": ["arrow functions", "closures"], "mistakeWatchlist": [] },
+            "nextLesson": "js-arrays-objects-101"
           }
         ]
       },
       {
         "id": "js-module-3",
-        "title": "Module 3: Data Structures & Objects",
+        "title": "Module 3: Data Structures",
         "lessons": [
           {
-            "id": "js-arrays-101",
-            "title": "Arrays: Lists of Data",
-            "objectives": ["Create and access arrays", "Use basic methods: push, pop, length"],
-             "prerequisites": ["js-vars-101"],
-             "timeEstimateMin": 30,
-             "content": {
-                 "explanations": ["An array is a single variable that can hold a whole list of items. Think of it like a numbered egg carton."],
-                 "demos": [{ "code": "let fruits = [\"apple\", \"banana\", \"cherry\"];\nconsole.log(fruits[0]); // apple\nfruits.push(\"orange\"); // Adds to the end\nconsole.log(fruits.length); // 4", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-objects-101"
-          },
-           {
-            "id": "js-objects-101",
-            "title": "Objects: Key-Value Pairs",
-            "objectives": ["Model real-world entities with objects", "Access properties using dot notation"],
-             "prerequisites": ["js-arrays-101"],
-             "timeEstimateMin": 30,
-             "content": {
-                 "explanations": ["Objects let us group related data together using named keys instead of numbered indexes."],
-                 "demos": [{ "code": "const car = {\n  make: \"Toyota\",\n  model: \"Corolla\",\n  year: 2020\n};\n\nconsole.log(car.make); // Dot notation\nconsole.log(car[\"model\"]); // Bracket notation", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-destructuring-101"
+            "id": "js-arrays-objects-101",
+            "title": "Arrays, Maps, Sets & Objects",
+            "objectives": ["Master array methods (map, filter)", "Understand Objects as key-value pairs", "Know when to use Maps or Sets"],
+            "prerequisites": ["js-module-2"],
+            "timeEstimateMin": 45,
+            "content": {
+              "explanations": ["Arrays are ordered lists, like a numbered to-do list.", "Objects are like physical things. A 'car' object has properties: color is red, wheels is 4.", "Sets are unique lists—like a guest list where you can't invite the same person twice."],
+              "demos": [{ "code": "const car = { color: 'red', wheels: 4 };\nconsole.log(`My car is ${car.color}`);\n\nconst guests = new Set();\nguests.add(\"Neo\");\nguests.add(\"Trinity\");\nguests.add(\"Neo\"); // Won't add him twice!\nconsole.log(guests.size); // 2", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["array methods", "Sets"], "mistakeWatchlist": [] },
+            "nextLesson": "js-destructuring-json-101"
           },
           {
-            "id": "js-destructuring-101",
-            "title": "Modern JS: Destructuring & Spread",
-            "objectives": ["Unpack values from arrays/objects easily", "Use the spread operator (...) for copying/merging"],
-             "prerequisites": ["js-objects-101"],
-             "timeEstimateMin": 35,
-             "content": {
-                 "explanations": ["Destructuring is a shortcut to extract data from arrays or objects into their own variables."],
-                 "demos": [{ "code": "// Object Destructuring\nconst user = { id: 1, name: \"Sam\" };\nconst { name } = user;\nconsole.log(name); // \"Sam\"\n\n// Spread Operator\nconst base = [1, 2];\nconst extended = [...base, 3, 4]; // [1, 2, 3, 4]", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-prototypes-101"
+            "id": "js-destructuring-json-101",
+            "title": "Destructuring, Spread & JSON",
+            "objectives": ["Unpack data with destructuring", "Use spread (...) to copy/merge", "Parse and stringify JSON"],
+            "prerequisites": ["js-arrays-objects-101"],
+            "timeEstimateMin": 35,
+            "content": {
+              "explanations": ["Destructuring is like unpacking a suitcase. Instead of taking items out one by one, you dump them all straight into the drawers you want.", "JSON is just a text format for sending data, like packing your object into a standardized shipping box."],
+              "demos": [{ "code": "const suitcase = { shirt: 'blue', pants: 'jeans' };\n// Unpacking directly into variables\nconst { shirt, pants } = suitcase;\nconsole.log(\"I am wearing a\", shirt, \"shirt\");", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["destructuring", "JSON"], "mistakeWatchlist": [] },
+            "nextLesson": "js-oop-101"
           }
         ]
       },
-       {
+      {
         "id": "js-module-4",
         "title": "Module 4: Prototypes & OOP",
         "lessons": [
           {
-            "id": "js-prototypes-101",
-            "title": "Prototypes & Classes",
-            "objectives": ["Understand standard 'class' syntax", "Basic inheritance with 'extends'"],
-             "prerequisites": ["js-objects-101"],
-             "timeEstimateMin": 45,
-             "content": {
-                 "explanations": ["Classes are blueprints for creating objects that share the same structure and behavior."],
-                 "demos": [{ "code": "class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    console.log(`${this.name} makes a noise.`);\n  }\n}\n\nclass Dog extends Animal {\n  speak() {\n    console.log(`${this.name} barks!`);\n  }\n}\n\nconst d = new Dog(\"Rex\");\nd.speak();", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-async-101"
+            "id": "js-oop-101",
+            "title": "Prototypes, Classes & Inheritance",
+            "objectives": ["Understand JavaScript's prototype chain", "Use 'class', 'extends', and 'super'", "Concept of encapsulation"],
+            "prerequisites": ["js-module-3"],
+            "timeEstimateMin": 45,
+            "content": {
+              "explanations": ["Classes are blueprints. A 'Dog' class isn't a real dog, it's the instructions for making one. When you say 'new Dog()', you actually build a real dog from that blueprint.", "Inheritance is like genetics. A 'Poodle' class can inherit all regular 'Dog' traits, but add its own specific curly hair trait."],
+              "demos": [{ "code": "class Dog {\n  constructor(name) { this.name = name; }\n  bark() { console.log(\"Woof!\"); }\n}\n\nconst fido = new Dog(\"Fido\"); // Built a real dog from blueprint\nfido.bark();", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["classes", "inheritance"], "mistakeWatchlist": [] },
+            "nextLesson": "js-async-promises-101"
           }
         ]
       },
@@ -454,18 +267,32 @@ export const rawCurriculumData = {
         "title": "Module 5: Async JS",
         "lessons": [
           {
-            "id": "js-async-101",
-            "title": "Async/Await & Promises",
-            "objectives": ["Understand non-blocking code", "Use async/await for cleaner asynchronous logic"],
-             "prerequisites": ["js-functions-101"],
-             "timeEstimateMin": 50,
-             "content": {
-                 "explanations": ["JavaScript is single-threaded. Async allows it to do heavy lifting (like network requests) without freezing the page.", "Async/await makes asynchronous code look and behave a bit more like standard synchronous code."],
-                 "demos": [{ "code": "function delay(ms) {\n  return new Promise(resolve => setTimeout(resolve, ms));\n}\n\nasync function runDemo() {\n  console.log(\"Starting...\");\n  await delay(2000); // Pauses here for 2 seconds\n  console.log(\"Done waiting!\");\n}\n\nrunDemo();", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": ["async/await", "promises"], "mistakeWatchlist": ["forgetting await"] },
-             "nextLesson": "js-dom-101"
+            "id": "js-async-promises-101",
+            "title": "Event Loop, Callbacks & Promises",
+            "objectives": ["Understand the Event Loop conceptually", "Move from callbacks to Promises to avoid 'callback hell'"],
+            "prerequisites": ["js-functions-101"],
+            "timeEstimateMin": 40,
+            "content": {
+              "explanations": ["Imagine a restaurant. You (the main thread) place an order with the kitchen (API). You don't just stand there waiting; you go back to your table and talk (Event Loop keeps running).", "A Promise is literally like the buzzer they give you. It guarantees that eventually it will either buzz (success!) or break (error)."],
+              "demos": [{ "code": "console.log(\"Ordering food...\");\n// The kitchen takes time\nsetTimeout(() => console.log(\"Food is ready! (Buzzer goes off)\"), 2000);\nconsole.log(\"Going back to table to talk...\");", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["event loop concept"], "mistakeWatchlist": [] },
+            "nextLesson": "js-async-await-101"
+          },
+          {
+            "id": "js-async-await-101",
+            "title": "Async/Await, Fetch & Error Handling",
+            "objectives": ["Use async/await for readable async code", "Fetch data from APIs", "Handle errors with try/catch"],
+            "prerequisites": ["js-async-promises-101"],
+            "timeEstimateMin": 45,
+            "content": {
+              "explanations": ["async/await is just a cleaner way to handle those restaurant buzzers. Instead of attaching complicated notes to them (.then()), you just say 'await' - which means 'pause this specific task until the buzzer goes off'."],
+              "demos": [{ "code": "async function getLunch() {\n  console.log(\"Waiting for food...\");\n  // await pauses JUST this function, not the whole app\n  // const food = await fetch('/api/lunch'); \n  console.log(\"Got it!\");\n}", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["async/await", "try/catch"], "mistakeWatchlist": ["forgetting await"] },
+            "nextLesson": "js-dom-101"
           }
         ]
       },
@@ -473,19 +300,33 @@ export const rawCurriculumData = {
         "id": "js-module-6",
         "title": "Module 6: DOM & Browser APIs",
         "lessons": [
-           {
+          {
             "id": "js-dom-101",
-            "title": "DOM Manipulation & Events",
-            "objectives": ["Select elements with querySelector", "Listen for user events (clicks)"],
-             "prerequisites": ["js-functions-101"],
-             "timeEstimateMin": 40,
-             "content": {
-                 "explanations": ["The DOM is how JavaScript sees HTML. We can reach into the page, grab elements, and change them."],
-                 "demos": [{ "code": "// Assuming <button id=\"myBtn\">Click me</button> exists\nconst btn = document.getElementById('myBtn');\n\nbtn.addEventListener('click', () => {\n  btn.textContent = \"Clicked!\";\n  btn.style.backgroundColor = \"#B9FF66\";\n});", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-modules-101"
+            "title": "DOM, Events & Manipulation",
+            "objectives": ["Select and modify HTML elements", "Listen to events like 'click' or 'submit'"],
+            "prerequisites": ["js-module-1"],
+            "timeEstimateMin": 40,
+            "content": {
+              "explanations": ["The DOM is like a puppet skeleton for your website. JavaScript is the puppeteer that pulls the strings to make elements move, change color, or disappear."],
+              "demos": [{ "code": "// const btn = document.querySelector('#myButton');\n// btn.textContent = \"Don't click me!\";\n// btn.addEventListener('click', () => alert('Ouch!'));", "explainByLine": false }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["DOM selection", "event listeners"], "mistakeWatchlist": [] },
+            "nextLesson": "js-storage-canvas-101"
+          },
+          {
+            "id": "js-storage-canvas-101",
+            "title": "localStorage, Forms & Canvas",
+            "objectives": ["Persist data with localStorage", "Handle form inputs", "Basic drawing on Canvas"],
+            "prerequisites": ["js-dom-101"],
+            "timeEstimateMin": 35,
+            "content": {
+              "explanations": ["localStorage is like a small locker in the user's browser. You can leave things there and they'll still be there when the user comes back tomorrow."],
+              "demos": [{ "code": "localStorage.setItem('theme', 'dark mode');\n// Later...\nconst savedTheme = localStorage.getItem('theme');", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["localStorage"], "mistakeWatchlist": [] },
+            "nextLesson": "js-modules-tooling-101"
           }
         ]
       },
@@ -493,19 +334,19 @@ export const rawCurriculumData = {
         "id": "js-module-7",
         "title": "Module 7: Modules & Tooling",
         "lessons": [
-            {
-            "id": "js-modules-101",
-            "title": "ES Modules (Import/Export)",
-            "objectives": ["Split code into multiple files", "Use import and export keywords"],
-             "prerequisites": ["js-functions-101"],
-             "timeEstimateMin": 30,
-             "content": {
-                 "explanations": ["As apps grow, keeping all code in one file is messy. Modules let us split code into logical, separate files."],
-                 "demos": [{ "code": "// math.js\nexport const add = (a, b) => a + b;\n\n// main.js\nimport { add } from './math.js';\nconsole.log(add(2, 3));", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-node-101"
+          {
+            "id": "js-modules-tooling-101",
+            "title": "ES Modules, NPM & Bundlers",
+            "objectives": ["Use import/export to structure code", "Understand role of NPM, Webpack/Vite", "Basics of linting (ESLint) and testing (Jest)"],
+            "prerequisites": ["js-module-5"],
+            "timeEstimateMin": 40,
+            "content": {
+              "explanations": ["Imagine building a whole house with just one giant blueprint. It's messy. Modules let you have separate blueprints for plumbing, electrical, etc., and 'import' them where needed."],
+              "demos": [{ "code": "// mathUtils.js\nexport const add = (a,b) => a+b;\n\n// main.js\nimport { add } from './mathUtils.js';\nconsole.log(add(2,2));", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["ES modules"], "mistakeWatchlist": [] },
+            "nextLesson": "js-node-fs-101"
           }
         ]
       },
@@ -513,19 +354,33 @@ export const rawCurriculumData = {
         "id": "js-module-8",
         "title": "Module 8: Node.js",
         "lessons": [
+          {
+            "id": "js-node-fs-101",
+            "title": "Node Runtime & File System",
+            "objectives": ["Run JS on the server", "Read/Write files with 'fs'", "Understand env variables"],
+            "prerequisites": ["js-async-await-101", "js-modules-tooling-101"],
+            "timeEstimateMin": 40,
+            "content": {
+              "explanations": ["Normally JS lives in the browser cage. Node.js lets it out of the cage to run on your actual computer or server, meaning it can finally touch files and listen to network ports directly."],
+              "demos": [{ "code": "import fs from 'fs/promises';\n// Writing a real file to disk!\n// await fs.writeFile('secret_diary.txt', 'Today I learned Node.');", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["Node.js basics", "fs module"], "mistakeWatchlist": [] },
+            "nextLesson": "js-node-express-101"
+          },
            {
-            "id": "js-node-101",
-            "title": "Node.js Basics & File System",
-            "objectives": ["Run JS outside the browser", "Read/Write files using 'fs' module"],
-             "prerequisites": ["js-modules-101", "js-async-101"],
-             "timeEstimateMin": 45,
-             "content": {
-                 "explanations": ["Node.js lets us run JavaScript on servers, not just in browsers. It gives us access to the computer's file system."],
-                 "demos": [{ "code": "import fs from 'fs/promises';\n\nasync function writeFile() {\n  try {\n    await fs.writeFile('test.txt', 'Hello from Node!');\n    console.log('File created');\n    const content = await fs.readFile('test.txt', 'utf-8');\n    console.log('Read back:', content);\n  } catch (err) {\n    console.error('Error:', err);\n  }\n}\n\nwriteFile();", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": [], "mistakeWatchlist": [] },
-             "nextLesson": "js-security-101"
+            "id": "js-node-express-101",
+            "title": "HTTP & Express Basics",
+            "objectives": ["Create a basic HTTP server", "Use Express for routing", "Async patterns in backend"],
+            "prerequisites": ["js-node-fs-101"],
+            "timeEstimateMin": 45,
+            "content": {
+              "explanations": ["Express is like a receptionist for your server. It looks at incoming requests (like someone asking for the home page '/'), and directs them to the right code to handle it."],
+              "demos": [{ "code": "// const express = require('express');\n// const app = express();\n// app.get('/hello', (req, res) => res.send('Hi there!'));", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["Express basics"], "mistakeWatchlist": [] },
+            "nextLesson": "js-security-perf-101"
           }
         ]
       },
@@ -534,18 +389,18 @@ export const rawCurriculumData = {
         "title": "Module 9: Security & Performance",
         "lessons": [
           {
-            "id": "js-security-101",
-            "title": "Web Security Basics (XSS)",
-            "objectives": ["Understand Cross-Site Scripting (XSS)", "Never trust user input directly in standard DOM"],
-             "prerequisites": ["js-dom-101"],
-             "timeEstimateMin": 35,
-             "content": {
-                 "explanations": ["XSS happens when an attacker tricks your site into running THEIR JavaScript code on other users' computers."],
-                 "demos": [{ "code": "// VULNERABLE CODE EXAMPLE\nconst userInput = \"<img src=x onerror=alert('Hacked!')>\";\ndocument.body.innerHTML = \"<div>Welcome, \" + userInput + \"</div>\";\n\n// SAFER WAY\n// document.body.textContent = ... OR use a framework that escapes HTML automatically.", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": ["XSS awareness"], "mistakeWatchlist": ["using innerHTML with user input"] },
-             "nextLesson": "ts-intro-101"
+            "id": "js-security-perf-101",
+            "title": "Web Security (XSS/CSRF) & Performance",
+            "objectives": ["Identify XSS and CSRF vulnerabilities", "Basic performance profiling", "Avoid memory leaks"],
+            "prerequisites": ["js-module-6", "js-module-8"],
+            "timeEstimateMin": 40,
+            "content": {
+              "explanations": ["Security rule #1: Never trust what the user types. XSS is like letting a stranger write on your restaurant's menu board—they might write something dangerous that tricks other customers."],
+              "demos": [],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["basic web security"], "mistakeWatchlist": [] },
+            "nextLesson": "ts-primer-101"
           }
         ]
       },
@@ -554,18 +409,18 @@ export const rawCurriculumData = {
         "title": "Module 10: TypeScript Primer",
         "lessons": [
           {
-            "id": "ts-intro-101",
-            "title": "TypeScript: Adding Types to JS",
-            "objectives": ["Understand what TypeScript adds to JS", "Basic type annotations (string, number, boolean)"],
-             "prerequisites": ["js-types-101"],
-             "timeEstimateMin": 40,
-             "content": {
-                 "explanations": ["TypeScript is JavaScript with a safety net. It forces you to define what KIND of data variables can hold, catching bugs before you even run the code."],
-                 "demos": [{ "code": "// JavaScript (valid but risky if called wrong)\nfunction greet(name) {\n  return \"Hello, \" + name.toUpperCase();\n}\n\n// TypeScript (safe)\n// function greet(name: string): string {\n//   return \"Hello, \" + name.toUpperCase();\n// }", "explainByLine": true}],
-                 "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 }}
-             },
-             "memoryUpdates": { "conceptsMastered": ["type annotations"], "mistakeWatchlist": [] },
-             "nextLesson": null
+            "id": "ts-primer-101",
+            "title": "TypeScript Basics & Migration",
+            "objectives": ["Define basic types (string, number, boolean)", "Use interfaces and generics", "Understand tsconfig.json"],
+            "prerequisites": ["js-module-7"],
+            "timeEstimateMin": 50,
+            "content": {
+              "explanations": ["Standard JS is like writing a document with no spell-checker. TypeScript adds a super-powerful spell-checker that doesn't just check spelling, but checks if your code even makes sense before you try to run it."],
+              "demos": [{ "code": "let age: number = 25;\n// age = \"twenty-five\"; // TypeScript yells at you here instantly!\n\ninterface Hero {\n  name: string;\n  powerLevel: number;\n}", "explainByLine": true }],
+              "oralQuestions": [], "debugging": [], "exercises": [], "assessment": { "questions": [], "passCriteria": { "minCorrect": 0 } }
+            },
+            "memoryUpdates": { "conceptsMastered": ["TypeScript basics", "interfaces"], "mistakeWatchlist": [] },
+            "nextLesson": null
           }
         ]
       }

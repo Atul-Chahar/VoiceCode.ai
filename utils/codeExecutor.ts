@@ -1,4 +1,5 @@
-import { ConsoleOutput } from '../types';
+
+import { ConsoleOutput, TestResult } from '../types';
 
 // A simple and safe-ish way to execute code and capture console logs
 export const executeCodeSafely = (code: string, onLog: (output: ConsoleOutput) => void) => {
@@ -40,4 +41,33 @@ export const executeCodeSafely = (code: string, onLog: (output: ConsoleOutput) =
         console.warn = originalConsole.warn;
         console.info = originalConsole.info;
     }
+};
+
+export const executeTests = (userCode: string, tests: string[]): TestResult[] => {
+    return tests.map(testExpression => {
+        try {
+            // We create a function that runs the user's code, then returns the result of the test expression.
+            // Note: This is a basic implementation and might struggle with complex scopes or async code without further refinement.
+            const testHarness = `
+                ${userCode}
+                try {
+                    return ${testExpression};
+                } catch(e) {
+                    throw e;
+                }
+            `;
+            const func = new Function(testHarness);
+            const result = func();
+            return {
+                test: testExpression,
+                passed: !!result
+            };
+        } catch (e: any) {
+            return {
+                test: testExpression,
+                passed: false,
+                error: e.message
+            };
+        }
+    });
 };

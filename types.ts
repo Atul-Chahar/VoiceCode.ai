@@ -27,6 +27,12 @@ export interface ConsoleOutput {
     message: string;
 }
 
+export interface TestResult {
+    test: string;
+    passed: boolean;
+    error?: string;
+}
+
 // --- Standardized Curriculum Types (based on PDF Pages 13-15) ---
 
 export interface Demo {
@@ -81,7 +87,7 @@ export interface Lesson {
     timeEstimateMin: number;
     content: LessonContent;
     memoryUpdates: MemoryUpdates;
-    nextLesson?: string;
+    nextLesson?: string | null;
 }
 
 export interface Module {

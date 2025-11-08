@@ -5,10 +5,11 @@ import LearningView from './components/LearningView';
 import { JAVASCRIPT_COURSE } from './constants';
 import PricingPage from './pages/PricingPage';
 import CoursesPage from './pages/CoursesPage';
+import ExplanationsPage from './pages/ExplanationsPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson';
+export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('landing');
@@ -29,7 +30,9 @@ const App: React.FC = () => {
       case 'dashboard':
         return <DashboardPage navigateTo={navigateTo} />;
       case 'lesson':
-        return <LearningView course={JAVASCRIPT_COURSE} onBack={() => navigateTo('dashboard')} />;
+        return <LearningView course={JAVASCRIPT_COURSE} navigateTo={navigateTo} />;
+      case 'explanations':
+        return <ExplanationsPage navigateTo={navigateTo} />;
       default:
         return <LandingPage navigateTo={navigateTo} />;
     }

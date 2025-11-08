@@ -1,5 +1,5 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { LiveServerMessage, FunctionCall, FunctionResponse } from "@google/genai";
 import { Progress, Transcript, Lesson } from '../types';
 import { startLiveSession, createPcmBlob, LiveSession } from '../services/geminiService';
@@ -32,6 +32,13 @@ export const useLiveTutor = (
   const transcriptRef = useRef<Transcript>({ user: '', ai: '', isFinal: false });
   const retryCountRef = useRef(0);
   const stopSignalRef = useRef(false);
+
+  // Ref to hold the latest version of onToolCall.
+  // This prevents stale closures in the long-lived live session callbacks.
+  const onToolCallRef = useRef(onToolCall);
+  useEffect(() => {
+      onToolCallRef.current = onToolCall;
+  }, [onToolCall]);
 
   const processAudioMessage = useCallback(async (message: LiveServerMessage) => {
     const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
@@ -69,12 +76,18 @@ export const useLiveTutor = (
   
   const processTranscriptionMessage = useCallback((message: LiveServerMessage) => {
       let updated = false;
+
+      if (transcriptRef.current.isFinal && (message.serverContent?.inputTranscription || message.serverContent?.outputTranscription)) {
+          transcriptRef.current = { user: '', ai: '', isFinal: false };
+          updated = true;
+      }
+
       if (message.serverContent?.inputTranscription) {
           transcriptRef.current.user = message.serverContent.inputTranscription.text;
           updated = true;
       }
       if (message.serverContent?.outputTranscription) {
-          transcriptRef.current.ai = message.serverContent.outputTranscription.text;
+          transcriptRef.current.ai += message.serverContent.outputTranscription.text;
           updated = true;
       }
        if (message.serverContent?.turnComplete) {
@@ -84,9 +97,6 @@ export const useLiveTutor = (
 
       if(updated){
         onStreamMessage({ ...transcriptRef.current });
-        if(transcriptRef.current.isFinal){
-            transcriptRef.current = { user: '', ai: '', isFinal: false };
-        }
       }
   }, [onStreamMessage]);
 
@@ -102,7 +112,7 @@ export const useLiveTutor = (
     setIsListening(false);
   }, []);
 
-  const connectRef = useRef<() => void>();
+  const connectRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const handleConnectionError = useCallback(() => {
     cleanUpResources();
@@ -159,7 +169,9 @@ export const useLiveTutor = (
             },
             onmessage: async (msg: LiveServerMessage) => {
                 if (msg.toolCall?.functionCalls) {
-                    const results = await onToolCall(msg.toolCall.functionCalls);
+                    // CRITICAL FIX: Use the ref to call the latest version of onToolCall
+                    // which will have access to the latest state (like editorCode)
+                    const results = await onToolCallRef.current(msg.toolCall.functionCalls);
                     const session = await sessionPromiseRef.current;
                     session?.sendToolResponse({ functionResponses: results });
                 }
@@ -185,7 +197,7 @@ export const useLiveTutor = (
         console.error('Failed to start session:', error);
         handleConnectionError();
     }
-  }, [isConnecting, progress, currentLesson, onToolCall, processAudioMessage, processTranscriptionMessage, handleConnectionError, cleanUpResources]);
+  }, [isConnecting, progress, currentLesson, processAudioMessage, processTranscriptionMessage, handleConnectionError, cleanUpResources]);
   
   connectRef.current = connect;
 

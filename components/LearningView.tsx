@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { FunctionCall, FunctionResponse } from "@google/genai";
-import { Course, Lesson, Transcript, ConsoleOutput } from '../types';
+import { Course, Lesson, Transcript, ConsoleOutput, TestResult } from '../types';
 import RoadmapSidebar from './RoadmapSidebar';
 import { useCourseProgress } from '../hooks/useCourseProgress';
 import { useLiveTutor } from '../hooks/useLiveTutor';
@@ -9,15 +9,16 @@ import LearningHeader from './LearningHeader';
 import ConversationPanel from './ConversationPanel';
 import CodeWorkspace from './CodeWorkspace';
 import LearningFooter from './LearningFooter';
-import { executeCodeSafely } from '../utils/codeExecutor';
+import { executeCodeSafely, executeTests } from '../utils/codeExecutor';
+import { View } from '../App';
 
 interface LearningViewProps {
   course: Course;
-  onBack: () => void;
+  navigateTo: (view: View) => void;
 }
 
-const LearningView: React.FC<LearningViewProps> = ({ course, onBack }) => {
-  const { progress, completeLesson } = useCourseProgress(course.id);
+const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
+  const { progress, updateProgress, completeLesson } = useCourseProgress(course.id);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -46,6 +47,14 @@ const LearningView: React.FC<LearningViewProps> = ({ course, onBack }) => {
         setConsoleOutput(prev => [...prev, output]);
     });
   }, [editorCode]);
+
+  const handleRunTests = useCallback((): TestResult[] => {
+      if (!currentLesson || !currentLesson.content.exercises || currentLesson.content.exercises.length === 0) {
+          return [];
+      }
+      // Currently only running tests for the first exercise for simplicity
+      return executeTests(editorCode, currentLesson.content.exercises[0].tests);
+  }, [editorCode, currentLesson]);
 
   const handleToolCall = async (functionCalls: FunctionCall[]): Promise<FunctionResponse[]> => {
       const responses: FunctionResponse[] = [];
@@ -98,9 +107,17 @@ const LearningView: React.FC<LearningViewProps> = ({ course, onBack }) => {
          // Mark final lesson as complete even if no next lesson
          completeLesson(currentLesson.id, currentLesson.id);
          alert("Congratulations! You've completed the course!");
-         onBack();
+         navigateTo('dashboard');
       }
   }
+  
+  const handleLessonClick = (lessonId: string) => {
+      updateProgress({ currentLessonId: lessonId });
+      // Optionally close sidebar on mobile when a lesson is selected
+      if (window.innerWidth < 768) {
+          setIsSidebarOpen(false);
+      }
+  };
 
   const getNextLesson = (): Lesson | null => {
     const allLessons = course.modules.flatMap(m => m.lessons);
@@ -117,9 +134,10 @@ const LearningView: React.FC<LearningViewProps> = ({ course, onBack }) => {
         course={course}
         completedLessons={progress.completedLessons}
         currentLessonId={progress.currentLessonId}
-        onBack={onBack}
+        onBack={() => navigateTo('dashboard')}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        onLessonClick={handleLessonClick}
       />
       <main className="flex flex-col flex-grow relative transition-all duration-300" style={{ marginLeft: isSidebarOpen ? '20rem' : '0' }}>
         <LearningHeader 
@@ -127,6 +145,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, onBack }) => {
             courseTitle={course.title}
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             isSidebarOpen={isSidebarOpen}
+            navigateTo={navigateTo}
         />
         <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-hidden">
           <ConversationPanel 
@@ -143,6 +162,8 @@ const LearningView: React.FC<LearningViewProps> = ({ course, onBack }) => {
             code={editorCode}
             onCodeChange={setEditorCode}
             output={consoleOutput}
+            exercises={currentLesson?.content.exercises || []}
+            onRunTests={handleRunTests}
           />
         </div>
         <LearningFooter 
