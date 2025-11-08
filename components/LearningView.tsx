@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FunctionCall, FunctionResponse } from "@google/genai";
 import { Course, Lesson, Transcript, ConsoleOutput, TestResult } from '../types';
 import RoadmapSidebar from './RoadmapSidebar';
@@ -19,6 +19,7 @@ interface LearningViewProps {
 const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
   const { progress, updateProgress, completeLesson } = useCourseProgress(course.id);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
   
   // Initialize sidebar closed on mobile, open on desktop
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
@@ -117,24 +118,33 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
     sessionError
   } = useLiveTutor(onStreamMessage, handleToolCall, progress, currentLesson);
   
-  const getNextLesson = (): Lesson | null => {
-    const allLessons = course.modules.flatMap(m => m.lessons);
-    const currentIndex = allLessons.findIndex(l => l.id === currentLesson?.id);
-    if(currentIndex !== -1 && currentIndex < allLessons.length - 1){
-        return allLessons[currentIndex + 1];
-    }
-    return null;
-  }
+  // Memoize the flattened list of lessons for easier navigation lookup
+  const allLessons = useMemo(() => course.modules.flatMap(m => m.lessons), [course]);
 
   const handleCompleteLesson = async () => {
-      if (!currentLesson) return;
-      const nextLesson = getNextLesson();
-      if (nextLesson) {
-        await completeLesson(currentLesson.id, nextLesson.id);
-      } else {
-         await completeLesson(currentLesson.id, currentLesson.id);
-         alert(`Congratulations! You've completed the ${course.title} course!`);
-         navigateTo('dashboard');
+      if (!currentLesson || isCompleting) return;
+      
+      setIsCompleting(true);
+      try {
+          const currentIndex = allLessons.findIndex(l => l.id === currentLesson.id);
+          let nextLessonId = currentLesson.id; // Default to staying on current if it's the last one
+
+          if (currentIndex !== -1 && currentIndex < allLessons.length - 1) {
+              nextLessonId = allLessons[currentIndex + 1].id;
+          }
+
+          await completeLesson(currentLesson.id, nextLessonId);
+
+          if (nextLessonId === currentLesson.id && currentIndex === allLessons.length - 1) {
+               // If we didn't move and we are at the end, they finished the course.
+               alert(`Congratulations! You've completed the ${course.title} course!`);
+               navigateTo('dashboard');
+          }
+      } catch (error) {
+          console.error("Failed to complete lesson:", error);
+          // Optional: Show a toast error here
+      } finally {
+          setIsCompleting(false);
       }
   }
   
@@ -174,9 +184,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
             navigateTo={navigateTo}
         />
         
-        {/* Main Content Area - Flex col on mobile, Grid on desktop */}
         <div className="flex-grow flex flex-col md:grid md:grid-cols-2 gap-4 p-2 md:p-4 overflow-hidden min-h-0">
-          {/* On mobile, give chat ~35% height, code ~65% height. On desktop, they are equal columns. */}
           <div className="h-[35%] md:h-auto min-h-0 flex-shrink-0 md:flex-shrink">
                <ConversationPanel 
                 isSessionActive={isSessionActive}
@@ -207,6 +215,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
                 setEditorCode('// Code has been reset.');
                 setConsoleOutput([]);
             }}
+            isCompleting={isCompleting}
         />
       </main>
     </div>

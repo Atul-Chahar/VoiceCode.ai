@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, type FirebaseOptions, type FirebaseApp } from 'firebase/app';
+import * as firebase from 'firebase/app';
 import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
@@ -9,7 +9,7 @@ import {
 
 // Your web app's Firebase configuration
 // Use (import.meta as any).env to avoid TypeScript errors if Vite types aren't strictly loaded.
-const firebaseConfig: FirebaseOptions = {
+const firebaseConfig = {
     apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY || "AIzaSyDdEk0fQ0JqUilEFKYQk4OczhkhpqNFwNw",
     authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN || "voicecode-ai-c143f.firebaseapp.com",
     projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID || "voicecode-ai-c143f",
@@ -21,7 +21,7 @@ const firebaseConfig: FirebaseOptions = {
 
 // Initialize Firebase singleton.
 // Prevents re-initialization errors during hot-reloads in development.
-const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+const app = firebase.getApps().length > 0 ? firebase.getApp() : firebase.initializeApp(firebaseConfig);
 
 // Initialize and export services
 export const auth: Auth = getAuth(app);

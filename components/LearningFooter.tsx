@@ -4,9 +4,10 @@ interface LearningFooterProps {
     onRun: () => void;
     onReset: () => void;
     onComplete: () => void;
+    isCompleting?: boolean;
 }
 
-const LearningFooter: React.FC<LearningFooterProps> = ({ onRun, onReset, onComplete }) => {
+const LearningFooter: React.FC<LearningFooterProps> = ({ onRun, onReset, onComplete, isCompleting = false }) => {
     return (
         <footer className="h-auto md:h-20 p-3 md:p-4 border-t border-[#262626] bg-[#181818] flex-shrink-0 flex flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -19,9 +20,14 @@ const LearningFooter: React.FC<LearningFooterProps> = ({ onRun, onReset, onCompl
             </div>
             <button
                 onClick={onComplete}
-                className="btn-primary px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-bold text-xs md:text-sm flex items-center whitespace-nowrap shadow-lg shadow-brand-green/10"
+                disabled={isCompleting}
+                className={`btn-primary px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-bold text-xs md:text-sm flex items-center whitespace-nowrap shadow-lg shadow-brand-green/10 transition-all ${isCompleting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-                Next Lesson <i className="fas fa-arrow-right ml-2"></i>
+                {isCompleting ? (
+                    <><i className="fas fa-spinner fa-spin mr-2"></i> Saving...</>
+                ) : (
+                    <>Next Lesson <i className="fas fa-arrow-right ml-2"></i></>
+                )}
             </button>
         </footer>
     );

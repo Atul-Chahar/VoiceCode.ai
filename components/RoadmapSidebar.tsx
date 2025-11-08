@@ -21,7 +21,7 @@ const RoadmapSidebar: React.FC<RoadmapSidebarProps> = ({ course, completedLesson
             <i className="fas fa-arrow-left"></i> Back to Dashboard
         </button>
         {/* Mobile close button */}
-        <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500 p-2">
+        <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500 p-2 hover:text-white transition-colors">
             <i className="fas fa-times"></i>
         </button>
       </header>
@@ -31,29 +31,31 @@ const RoadmapSidebar: React.FC<RoadmapSidebarProps> = ({ course, completedLesson
         {course.modules.map((module) => (
           <div key={module.id} className="mb-8">
             <h3 className="font-bold text-brand-green mb-3 uppercase text-xs tracking-wider px-2 opacity-80">{module.title}</h3>
-            <ul className="space-y-1">
+            <ul className="space-y-1 relative"> 
               {module.lessons.map((lesson, lessonIndex) => {
                 globalLessonIndex++;
                 const displayIndex = globalLessonIndex;
                 const isCompleted = completedLessons.includes(lesson.id);
                 const isCurrent = lesson.id === currentLessonId;
+                const isLastInModule = lessonIndex === module.lessons.length - 1;
 
                 return (
-                  <li 
-                    key={lesson.id} 
-                    className={`relative flex items-center p-2 rounded-lg transition-all cursor-pointer group ${isCurrent ? 'bg-[#262626]' : 'hover:bg-[#262626]/50'}`}
-                    onClick={() => onLessonClick(lesson.id)}
-                  >
-                     {/* Connector Line */}
-                    {lessonIndex < module.lessons.length - 1 && (
-                         <div className="absolute left-[23px] top-8 w-px h-full bg-[#333] -z-10 group-hover:bg-[#444] transition-colors"></div>
+                  <li key={lesson.id} className="relative">
+                     {/* Connector Line - positioned absolutely relative to the ul/li but behind the button */}
+                    {!isLastInModule && (
+                         <div className="absolute left-[23px] top-8 bottom-[-4px] w-px bg-[#333] -z-10"></div>
                     )}
                     
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-[2px] mr-3 flex-shrink-0 transition-all z-10
-                        ${isCompleted ? 'bg-brand-green border-brand-green text-black' : isCurrent ? 'bg-[#B9FF66]/10 border-brand-green text-brand-green' : 'border-[#333] bg-[#181818] text-gray-500 group-hover:border-gray-500'}`}>
-                       {isCompleted ? <i className="fas fa-check text-xs font-bold"></i> : <span className="text-xs font-bold">{displayIndex}</span>}
-                    </div>
-                    <span className={`text-sm font-medium leading-tight ${isCurrent ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{lesson.title}</span>
+                    <button 
+                        onClick={() => onLessonClick(lesson.id)}
+                        className={`w-full flex items-center p-2 rounded-lg transition-all cursor-pointer text-left group relative z-10 ${isCurrent ? 'bg-[#262626]' : 'hover:bg-[#262626]/50'}`}
+                    >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-[2px] mr-3 flex-shrink-0 transition-all
+                            ${isCompleted ? 'bg-brand-green border-brand-green text-black' : isCurrent ? 'bg-[#B9FF66]/10 border-brand-green text-brand-green' : 'border-[#333] bg-[#181818] text-gray-500 group-hover:border-gray-500'}`}>
+                        {isCompleted ? <i className="fas fa-check text-xs font-bold"></i> : <span className="text-xs font-bold">{displayIndex}</span>}
+                        </div>
+                        <span className={`text-sm font-medium leading-tight ${isCurrent ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{lesson.title}</span>
+                    </button>
                   </li>
                 );
               })}
