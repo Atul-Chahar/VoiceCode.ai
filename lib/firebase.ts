@@ -1,5 +1,5 @@
 
-import { initializeApp } from 'firebase/app';
+import * as firebase from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -15,7 +15,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Using namespace import 'firebase' to access initializeApp as a workaround for potential type resolution issues
+const app = firebase.initializeApp(firebaseConfig);
 
 // Initialize and export services
 export const auth = getAuth(app);
