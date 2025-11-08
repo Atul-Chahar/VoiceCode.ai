@@ -16,6 +16,26 @@ export interface Progress {
   aiMemory: string[];
 }
 
+// New strictly typed Firestore models
+export interface UserProfile {
+    uid: string;
+    name: string;
+    email: string;
+    createdAt: string; 
+}
+
+export interface CourseProgress {
+  completedLessonIds: string[];
+  currentLessonId: string | null;
+  aiMemory?: string[];
+  updatedAt?: any; // generic for Firestore Timestamp or Date
+}
+
+export interface UserNotes {
+  content: string;
+  updatedAt?: any;
+}
+
 export interface Transcript {
   user: string;
   ai: string;
@@ -40,8 +60,7 @@ export interface User {
     name: string;
 }
 
-// --- Standardized Curriculum Types (based on PDF Pages 13-15) ---
-
+// --- Standardized Curriculum Types ---
 export interface Demo {
     code: string;
     explainByLine: boolean;
@@ -105,12 +124,11 @@ export interface Module {
 
 export interface Course {
     id: string;
-    title: string; // Mapped from 'name' in JSON for consistency with UI
+    title: string; 
     description: string;
     modules: Module[];
 }
 
-// Interface specifically for importing the raw JSON which might have slight naming diffs
 export interface RawCurriculumDatabase {
     course: {
         id: string;

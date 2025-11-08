@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Transcript } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { dbService } from '../services/dbService';
+import { useUserNotes } from '../hooks/useUserNotes';
 
 interface ConversationPanelProps {
     isSessionActive: boolean;
@@ -27,54 +27,9 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 }) => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'chat' | 'notes'>('chat');
-    const [notes, setNotes] = useState('');
-    const [isNotesLoading, setIsNotesLoading] = useState(false);
-    // Use a ref to debounce standard Firestore saves
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Load Notes
-    useEffect(() => {
-        const loadNotes = async () => {
-            if (!user) {
-                 setNotes(localStorage.getItem('voicecode_notes') || '');
-                 return;
-            }
-
-            setIsNotesLoading(true);
-            try {
-                const fetchedNotes = await dbService.getUserNotes(user.id);
-                setNotes(fetchedNotes);
-            } catch (e) {
-                console.error("Failed to load notes", e);
-            } finally {
-                setIsNotesLoading(false);
-            }
-        }
-        loadNotes();
-    }, [user]);
-
-    // Save Notes (Debounced)
-    const handleNotesChange = (newNotes: string) => {
-        setNotes(newNotes);
-
-        if (!user) {
-             localStorage.setItem('voicecode_notes', newNotes);
-             return;
-        }
-
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-
-        // Wait 1 second after last keystroke before saving to DB
-        saveTimeoutRef.current = setTimeout(async () => {
-            try {
-                await dbService.saveUserNotes(user.id, newNotes);
-            } catch (e) {
-                console.error("Failed to save notes to DB", e);
-            }
-        }, 1000);
-    };
+    
+    // Use the new hook for notes management
+    const { notes, updateNotes, isLoading: isNotesLoading, isSaving } = useUserNotes();
 
     const handleMicClick = () => {
         if (isSessionActive) {
@@ -122,6 +77,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                     className={`flex-1 py-3 text-sm font-semibold transition-colors border-l border-[#262626] ${activeTab === 'notes' ? 'bg-[#181818] text-brand-green' : 'text-gray-400 hover:text-gray-200 hover:bg-[#181818]/50'}`}
                 >
                     <i className="fas fa-sticky-note mr-2"></i> My Notes
+                    {isSaving && <span className="ml-2 text-xs opacity-50 animate-pulse">Saving...</span>}
                 </button>
             </header>
 
@@ -186,7 +142,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                         className="w-full h-full bg-[#0D0D0D] border border-[#262626] rounded-lg p-4 text-gray-300 resize-none focus:outline-none focus:border-brand-green transition-colors font-mono text-sm placeholder-gray-600"
                         placeholder={user ? "Type your notes here... They automatically save to the cloud." : "Type your notes here... (Local storage only until you sign in)"}
                         value={notes}
-                        onChange={(e) => handleNotesChange(e.target.value)}
+                        onChange={(e) => updateNotes(e.target.value)}
                         spellCheck={false}
                     />
                 </div>
