@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Course, Lesson, ConsoleOutput, Transcript, InteractionMode, TestResult } from '../types';
+import { Course, Lesson, ConsoleOutput, Transcript, TestResult } from '../types';
 import { View } from '../App';
 import RoadmapSidebar from './RoadmapSidebar';
 import LearningHeader from './LearningHeader';
@@ -51,7 +51,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
             try {
                 switch (call.name) {
                     case 'writeCode':
-                        const { code, explanation } = call.args as any;
+                        const { code } = call.args as any;
                         // We append or replace depending on context, for now let's append with a newline if not empty
                         setEditorCode(prev => {
                             // Basic heuristic: if completely empty or just comments, replace. Otherwise append.
@@ -61,14 +61,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
                         result = { success: true, message: "Code written to editor." };
                         break;
                     case 'readCode':
-                        // We need the *current* state of editorCode here. 
-                        // The useLiveTutor hook uses a ref to ensure it gets the latest version of this callback.
-                        // We must ensure WE also have access to the latest state if we were using closures,
-                        // but the setState callback pattern above helps for writeCode.
-                        // For readCode, we might need a ref if this callback doesn't update with state changes in the hook.
-                        // *Self-correction*: standard useState in standard callback might be stale if the callback isn't recreated.
-                        // We'll trust React's state for now, but might need a Ref for editorCode if it reads stale data.
-                        // Actually, let's USE A REF for editorCode to be safe in async callbacks.
+                        // We use a ref to ensure we get the latest editor code
                         result = { code: editorCodeRef.current };
                         break;
                     case 'executeCode':
@@ -84,7 +77,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
             responses.push({ id: call.id, name: call.name, response: result });
         }
         return responses;
-    }, []); // Dependencies will be managed by the Ref in useLiveTutor, but we need to keep editorCode Ref updated.
+    }, []);
 
     // Keep a ref for editor code to avoid stale closures in tool calls
     const editorCodeRef = useRef(editorCode);
@@ -159,7 +152,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
                 <RoadmapSidebar 
                     course={course}
                     currentLessonId={currentLesson.id}
-                    completedLessons={progress.completedLessons}
+                    completedLessons={progress.completedLessonIds}
                     onSelectLesson={handleSelectLesson}
                     isOpen={isSidebarOpen}
                 />

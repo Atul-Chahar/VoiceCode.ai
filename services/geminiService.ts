@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from "@google/genai";
-import { Progress, Lesson } from "../types";
+import { CourseProgress, Lesson } from "../types";
 
 // Initialize strictly according to guidelines, but lazily to prevent top-level browser crashes
 let aiClient: GoogleGenAI | null = null;
@@ -60,7 +61,7 @@ type LiveSessionType = Awaited<ReturnType<GoogleGenAI['live']['connect']>>;
 export type LiveSession = LiveSessionType;
 
 export const startLiveSession = (
-    progress: Progress,
+    progress: CourseProgress,
     currentLesson: Lesson | null,
     callbacks: {
         onopen: () => void;
@@ -69,7 +70,7 @@ export const startLiveSession = (
         onclose: (e: CloseEvent) => void;
     }
 ): Promise<LiveSession> => {
-    const { aiMemory } = progress;
+    const aiMemory = progress.aiMemory || [];
 
     // Inject strict lesson protocols if a lesson is active
     const lessonProtocol = currentLesson ? `

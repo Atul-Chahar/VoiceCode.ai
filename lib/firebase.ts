@@ -1,11 +1,11 @@
 
-import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
   persistentMultipleTabManager,
-  type Firestore
+  Firestore
 } from 'firebase/firestore';
 
 // Your web app's Firebase configuration

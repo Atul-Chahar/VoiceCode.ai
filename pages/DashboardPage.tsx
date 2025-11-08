@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View } from '../App';
 import { JAVASCRIPT_COURSE } from '../constants';
@@ -12,7 +13,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
   const { user } = useAuth();
   const { progress } = useCourseProgress(JAVASCRIPT_COURSE.id);
   const totalLessons = JAVASCRIPT_COURSE.modules.reduce((acc, module) => acc + module.lessons.length, 0);
-  const completedLessonsCount = progress.completedLessons.length;
+  const completedLessonsCount = progress.completedLessonIds.length;
   const progressPercentage = totalLessons > 0 ? (completedLessonsCount / totalLessons) * 100 : 0;
 
   return (

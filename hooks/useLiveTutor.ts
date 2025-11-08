@@ -1,7 +1,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { LiveServerMessage, FunctionCall, FunctionResponse } from "@google/genai";
-import { Progress, Transcript, Lesson } from '../types';
+import { CourseProgress, Transcript, Lesson } from '../types';
 import { startLiveSession, createPcmBlob, LiveSession } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audio';
 
@@ -12,7 +12,7 @@ const MAX_RETRIES = 3;
 export const useLiveTutor = (
   onStreamMessage: (newTranscript: Transcript) => void,
   onToolCall: (functionCalls: FunctionCall[]) => Promise<FunctionResponse[]>,
-  progress: Progress,
+  progress: CourseProgress,
   currentLesson: Lesson | null
 ) => {
   const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);

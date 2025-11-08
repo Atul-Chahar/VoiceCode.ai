@@ -10,12 +10,6 @@ export enum InteractionMode {
   Voice = 'VOICE',
 }
 
-export interface Progress {
-  completedLessons: string[];
-  currentLessonId: string;
-  aiMemory: string[];
-}
-
 // New strictly typed Firestore models
 export interface UserProfile {
     uid: string;
@@ -26,6 +20,7 @@ export interface UserProfile {
 
 export interface CourseProgress {
   completedLessonIds: string[];
+  completedModuleIds: string[];
   currentLessonId: string | null;
   aiMemory?: string[];
   updatedAt?: any; // generic for Firestore Timestamp or Date
