@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from "@google/genai";
-import { CourseProgress, Lesson } from "../types";
+import { Progress, Lesson } from "../types";
 
 // Initialize strictly according to guidelines, but lazily to prevent top-level browser crashes
 let aiClient: GoogleGenAI | null = null;
@@ -60,12 +60,12 @@ const controlAppTool: FunctionDeclaration = {
     name: 'controlApp',
     parameters: {
         type: Type.OBJECT,
-        description: 'Triggers an action in the application when the user gives a voice command like "run code", "reset", or "next lesson".',
+        description: 'Triggers a specific action in the application interface when explicitly requested by the user via voice.',
         properties: {
             action: {
                 type: Type.STRING,
-                enum: ['runCode', 'resetCode', 'nextLesson'],
-                description: 'The action to perform.',
+                description: 'The specific interface action to trigger.',
+                enum: ['run_code', 'reset_code', 'next_lesson']
             }
         },
         required: ['action'],
@@ -77,7 +77,7 @@ type LiveSessionType = Awaited<ReturnType<GoogleGenAI['live']['connect']>>;
 export type LiveSession = LiveSessionType;
 
 export const startLiveSession = (
-    progress: CourseProgress,
+    progress: Progress,
     currentLesson: Lesson | null,
     callbacks: {
         onopen: () => void;
@@ -86,7 +86,7 @@ export const startLiveSession = (
         onclose: (e: CloseEvent) => void;
     }
 ): Promise<LiveSession> => {
-    const aiMemory = progress.aiMemory || [];
+    const { aiMemory } = progress;
 
     // Inject strict lesson protocols if a lesson is active
     const lessonProtocol = currentLesson ? `
@@ -106,10 +106,12 @@ Your goal is to teach programming through natural, human-like conversation, adhe
 - **Socratic Tutor:** Ask guiding questions (e.g., "Why do you think that happened?") instead of giving direct answers.
 - **Constructivist:** Connect new topics to what they already know.
 
+**VOICE COMMANDS:**
+If the user says phrases like "run the code", "reset this", or "I'm done, next lesson", use the 'controlApp' tool to trigger that action for them.
+
 **TEACHING TOOLS:**
 - USE 'writeCode' FREQUENTLY to manifest examples on their screen while you talk.
 - USE 'readCode' before debugging their work.
-- LISTEN for voice commands like "run the code", "start over" (reset), or "I'm done" (next lesson) and use the 'controlApp' tool to trigger them.
 
 ${lessonProtocol}
 

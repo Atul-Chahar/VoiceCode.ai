@@ -8,7 +8,7 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
-    const { login, loginWithGoogle } = useAuth();
+    const { login, loginWithGoogle, loginAsGuest } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -32,14 +32,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ navigateTo }) => {
         try {
             setError('');
             await loginWithGoogle();
-            // Redirect handled by Supabase
+            // Redirect handled by auth state listener
         } catch (err: any) {
              setError(err.message || 'Failed to sign in with Google');
         }
     }
 
+    const handleGuestLogin = async () => {
+        try {
+            setError('');
+            setIsLoading(true);
+            await loginAsGuest();
+             // Redirect handled by auth state listener
+        } catch (err: any) {
+            setError(err.message || 'Failed to sign in as guest');
+            setIsLoading(false);
+        }
+    }
+
     return (
-        <div className="min-h-screen pt-24 pb-12 px-4 flex items-center justify-center">
+        <div className="min-h-screen pt-24 pb-12 px-4 flex items-center justify-center relative">
+            {/* Test Mode Button */}
+            <button 
+                onClick={handleGuestLogin}
+                className="absolute top-24 right-4 md:right-8 text-gray-600 hover:text-brand-green text-xs flex items-center gap-2 opacity-60 hover:opacity-100 transition-all border border-[#262626] hover:border-brand-green/30 rounded-full px-3 py-1.5"
+                title="Use for testing without an account"
+            >
+                <i className="fas fa-user-secret"></i>
+                Test Mode (Guest)
+            </button>
+
             <div className="dark-card w-full max-w-md p-8 rounded-xl border-[#262626]">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>

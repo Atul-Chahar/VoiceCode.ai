@@ -9,12 +9,12 @@ interface ConversationPanelProps {
     isConnecting: boolean;
     isListening: boolean;
     isSpeaking: boolean;
+    isMuted: boolean;
     startSession: () => void;
     stopSession: () => void;
+    toggleMute: () => void;
     transcript: Transcript;
     sessionError: string | null;
-    isMuted: boolean;
-    toggleMute: () => void;
 }
 
 const ConversationPanel: React.FC<ConversationPanelProps> = ({
@@ -22,26 +22,18 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
     isConnecting,
     isListening,
     isSpeaking,
+    isMuted,
     startSession,
     stopSession,
+    toggleMute,
     transcript,
-    sessionError,
-    isMuted,
-    toggleMute
+    sessionError
 }) => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'chat' | 'notes'>('chat');
     const { notes, updateNotes, isLoading: isNotesLoading, isSaving } = useUserNotes();
 
-    const handleMicClick = () => {
-        if (isSessionActive) {
-            stopSession();
-        } else {
-            startSession();
-        }
-    };
-
-    // Keyboard shortcut for mute
+    // Keyboard shortcut for Mute (Alt + M)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.altKey && e.code === 'KeyM' && isSessionActive) {
@@ -53,12 +45,20 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isSessionActive, toggleMute]);
 
+    const handleMicClick = () => {
+        if (isSessionActive) {
+            stopSession();
+        } else {
+            startSession();
+        }
+    };
+
     let micButtonState = 'idle';
     if (isConnecting) micButtonState = 'connecting';
     else if (sessionError) micButtonState = 'error';
     else if (isSessionActive) {
         if (isMuted) micButtonState = 'muted';
-        else if (isSpeaking) micButtonState = 'speaking';
+        else if (isSpeaking) micButtonState = 'speaking'; // AI speaking overrides listening visually
         else if (isListening) micButtonState = 'listening';
         else micButtonState = 'active';
     }
@@ -66,10 +66,12 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
     const getStatusText = () => {
         if (sessionError) return sessionError;
         if (isConnecting) return 'Connecting...';
-        if (isMuted) return 'Mic Muted (Alt+M)';
-        if (isSpeaking) return 'AI Speaking...';
-        if (isListening) return 'Listening...';
-        if (isSessionActive) return 'Session Active';
+        if (isSessionActive) {
+             if (isMuted) return 'Mic Muted (Alt+M)';
+             if (isSpeaking) return 'AI Speaking (Auto-Muted)';
+             if (isListening) return 'Listening...';
+             return 'Session Active';
+        }
         return 'Tap to Start';
     }
 
@@ -115,7 +117,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
                             <div className="flex-grow flex items-center justify-center text-gray-600 text-center p-6">
                                 <div>
                                     <i className="fas fa-headset text-4xl mb-4 opacity-20"></i>
-                                    <p className="text-sm">Start a session and just talk naturally.<br/>"Run code" or "Reset" via voice.</p>
+                                    <p className="text-sm">Start a session and just talk naturally.<br/>I'm ready to help you code.</p>
                                 </div>
                             </div>
                         )}
@@ -123,39 +125,55 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({
 
                     {/* Controls Area */}
                     <div className="p-3 md:p-4 border-t border-[#262626] bg-[#131313] flex-shrink-0">
-                        <div className="flex items-center gap-3 md:gap-4">
+                        <div className="flex items-center gap-4">
+                            {/* Main Connect Button */}
                             <button 
                                 onClick={handleMicClick} 
                                 disabled={isConnecting}
-                                className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-xl md:text-2xl transition-all duration-300 flex-shrink-0 shadow-lg
+                                className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-300 flex-shrink-0 shadow-lg
                                     ${micButtonState === 'idle' && 'bg-[#262626] text-white hover:bg-[#333]'}
                                     ${micButtonState === 'connecting' && 'bg-[#262626] text-gray-500 cursor-not-allowed animate-pulse'}
-                                    ${(micButtonState === 'active' || micButtonState === 'listening' || micButtonState === 'muted') && 'bg-brand-green text-black shadow-brand-green/20'}
+                                    ${micButtonState === 'muted' && 'bg-red-500/20 text-red-500 border border-red-500/50'}
+                                    ${(micButtonState === 'active' || micButtonState === 'listening') && 'bg-brand-green text-black shadow-brand-green/20'}
                                     ${micButtonState === 'speaking' && 'bg-blue-500 text-white shadow-blue-500/20'}
-                                    ${micButtonState === 'error' && 'bg-red-500/20 text-red-500 border border-red-500/50'}
+                                    ${micButtonState === 'error' && 'bg-red-900/20 text-red-500 border border-red-900/50'}
                                 `}
-                                title={isSessionActive ? "Stop Session" : "Start Session"}
+                                title={isSessionActive ? "Disconnect Session" : "Start Session"}
                             >
-                                <i className={`fas ${isConnecting ? 'fa-spinner fa-spin' : micButtonState === 'speaking' ? 'fa-volume-up animate-pulse' : 'fa-microphone'}`}></i>
+                                {isSessionActive ? (
+                                     <i className="fas fa-stop"></i>
+                                ) : (
+                                    <i className={`fas ${isConnecting ? 'fa-spinner fa-spin' : 'fa-microphone'}`}></i>
+                                )}
                             </button>
 
-                             {isSessionActive && (
-                                <button
-                                    onClick={toggleMute}
-                                    className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-lg transition-all duration-300 flex-shrink-0 border ${isMuted ? 'bg-red-500/20 text-red-400 border-red-500/50' : 'bg-[#262626] text-gray-400 border-[#333] hover:text-white hover:border-gray-500'}`}
-                                    title="Toggle Mute (Alt+M)"
-                                >
-                                    <i className={`fas ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
-                                </button>
-                            )}
-
-                            <div className="flex-grow min-w-0">
-                                 <p className={`text-xs md:text-sm font-bold truncate mb-1 ${sessionError ? 'text-red-400' : isMuted ? 'text-red-400' : isSessionActive ? 'text-brand-green' : 'text-gray-400'}`}>
-                                     {getStatusText()}
-                                 </p>
+                            {/* Status & Mute Controls */}
+                            <div className="flex-grow min-w-0 flex flex-col justify-center">
+                                 <div className="flex items-center justify-between mb-2">
+                                     <p className={`text-xs md:text-sm font-bold truncate ${sessionError ? 'text-red-400' : isMuted ? 'text-red-400' : isSessionActive ? 'text-brand-green' : 'text-gray-400'}`}>
+                                         {getStatusText()}
+                                     </p>
+                                     
+                                     {/* Dedicated Mute Toggle - Only visible when active */}
+                                     {isSessionActive && !sessionError && (
+                                         <button 
+                                            onClick={toggleMute}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-[#262626] text-gray-400 hover:text-white hover:bg-[#333]'}`}
+                                            title={isMuted ? "Unmute (Alt+M)" : "Mute (Alt+M)"}
+                                         >
+                                             <i className={`fas ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'} text-xs`}></i>
+                                         </button>
+                                     )}
+                                 </div>
+                                 
+                                 {/* Activity Bar */}
                                  <div className="h-1 bg-[#262626] rounded-full overflow-hidden">
                                      {isSessionActive && !sessionError && (
-                                         <div className={`h-full rounded-full transition-all duration-500 ${isMuted ? 'w-full bg-red-500/50' : isSpeaking ? 'w-full bg-blue-500' : isListening ? 'w-2/3 bg-brand-green animate-pulse' : 'w-full bg-brand-green'}`}></div>
+                                         <div className={`h-full rounded-full transition-all duration-300 
+                                            ${isMuted ? 'w-full bg-red-900' : 
+                                              isSpeaking ? 'w-full bg-blue-500' : 
+                                              isListening ? 'w-2/3 bg-brand-green animate-pulse' : 'w-full bg-brand-green'}`}>
+                                         </div>
                                      )}
                                  </div>
                             </div>

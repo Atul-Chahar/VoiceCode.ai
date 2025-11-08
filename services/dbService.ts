@@ -9,7 +9,7 @@ import {
     deleteDoc 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { CourseProgress } from '../types';
+import { Progress } from '../types';
 import { INITIAL_PROGRESS } from '../constants';
 
 // Define a standard User Profile interface for Firestore
@@ -78,13 +78,13 @@ export const dbService = {
 
     // --- Existing App-Specific Methods ---
 
-    async getUserProgress(userId: string, courseId: string): Promise<CourseProgress> {
+    async getUserProgress(userId: string, courseId: string): Promise<Progress> {
         try {
             const docRef = doc(db, 'users', userId, 'progress', courseId);
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
-                return docSnap.data() as CourseProgress;
+                return docSnap.data() as Progress;
             } else {
                 return INITIAL_PROGRESS;
             }
@@ -94,7 +94,7 @@ export const dbService = {
         }
     },
 
-    async saveUserProgress(userId: string, courseId: string, progress: CourseProgress): Promise<void> {
+    async saveUserProgress(userId: string, courseId: string, progress: Progress): Promise<void> {
         try {
             const docRef = doc(db, 'users', userId, 'progress', courseId);
             await setDoc(docRef, progress, { merge: true });

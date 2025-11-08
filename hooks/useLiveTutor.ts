@@ -1,7 +1,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { LiveServerMessage, FunctionCall, FunctionResponse } from "@google/genai";
-import { CourseProgress, Transcript, Lesson } from '../types';
+import { Progress, Transcript, Lesson } from '../types';
 import { startLiveSession, createPcmBlob, LiveSession } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audio';
 
@@ -12,7 +12,7 @@ const MAX_RETRIES = 3;
 export const useLiveTutor = (
   onStreamMessage: (newTranscript: Transcript) => void,
   onToolCall: (functionCalls: FunctionCall[]) => Promise<FunctionResponse[]>,
-  progress: CourseProgress,
+  progress: Progress,
   currentLesson: Lesson | null
 ) => {
   const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
@@ -20,11 +20,8 @@ export const useLiveTutor = (
   const [isConnecting, setIsConnecting] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-  
-  // Mute state
   const [isMuted, setIsMuted] = useState(false);
-  const isMutedRef = useRef(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   const inputAudioContextRef = useRef<AudioContext | undefined>(undefined);
   const outputAudioContextRef = useRef<AudioContext | undefined>(undefined);
@@ -37,21 +34,20 @@ export const useLiveTutor = (
   const retryCountRef = useRef(0);
   const stopSignalRef = useRef(false);
 
+  // Refs for state that must be accessed inside the audio processing closure without staleness
+  const isMutedRef = useRef(isMuted);
+  const isSpeakingRef = useRef(isSpeaking);
+
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+
   // Ref to hold the latest version of onToolCall.
-  // This prevents stale closures in the long-lived live session callbacks.
   const onToolCallRef = useRef(onToolCall);
   useEffect(() => {
       onToolCallRef.current = onToolCall;
   }, [onToolCall]);
 
-  const toggleMute = useCallback(() => {
-      const newState = !isMutedRef.current;
-      isMutedRef.current = newState;
-      setIsMuted(newState);
-  }, []);
-
   const processAudioMessage = useCallback(async (message: LiveServerMessage) => {
-    // TS Fix: deeper optional chaining for parts array access
     const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
       if (!outputAudioContextRef.current) {
@@ -94,12 +90,10 @@ export const useLiveTutor = (
       }
 
       if (message.serverContent?.inputTranscription) {
-          // TS Fix: Provide fallback string if text is undefined
           transcriptRef.current.user = message.serverContent.inputTranscription.text || '';
           updated = true;
       }
       if (message.serverContent?.outputTranscription) {
-          // TS Fix: Provide fallback string if text is undefined
           transcriptRef.current.ai += message.serverContent.outputTranscription.text || '';
           updated = true;
       }
@@ -123,9 +117,8 @@ export const useLiveTutor = (
     setIsSessionActive(false);
     setIsConnecting(false);
     setIsListening(false);
-    // Reset mute state on close
-    isMutedRef.current = false;
-    setIsMuted(false);
+    setIsSpeaking(false);
+    setIsMuted(false); // Reset mute state on close
   }, []);
 
   const connectRef = useRef<(() => Promise<void>) | undefined>(undefined);
@@ -162,19 +155,26 @@ export const useLiveTutor = (
     try {
         const sessionPromise = startLiveSession(progress, currentLesson, {
             onopen: async () => {
-                mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
                 inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: INPUT_SAMPLE_RATE });
                 const source = inputAudioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
                 scriptProcessorRef.current = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
                 
                 scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
-                    // SOFT MUTE CHECK: If muted, do not send data to the model.
-                    if (isMutedRef.current) return;
-
-                    sessionPromiseRef.current?.then((session) => {
-                        const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                        session.sendRealtimeInput({ media: createPcmBlob(inputData) });
-                    });
+                    // SMART MUTE LOGIC: 
+                    // Only send audio if NOT muted manually AND NOT currently speaking (prevents AI hearing itself)
+                    if (!isMutedRef.current && !isSpeakingRef.current) {
+                        sessionPromiseRef.current?.then((session) => {
+                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                            session.sendRealtimeInput({ media: createPcmBlob(inputData) });
+                        });
+                    }
                 };
 
                 source.connect(scriptProcessorRef.current);
@@ -188,8 +188,6 @@ export const useLiveTutor = (
             },
             onmessage: async (msg: LiveServerMessage) => {
                 if (msg.toolCall?.functionCalls) {
-                    // CRITICAL FIX: Use the ref to call the latest version of onToolCall
-                    // which will have access to the latest state (like editorCode)
                     const results = await onToolCallRef.current(msg.toolCall.functionCalls);
                     const session = await sessionPromiseRef.current;
                     session?.sendToolResponse({ functionResponses: results });
@@ -239,15 +237,19 @@ export const useLiveTutor = (
     sessionPromiseRef.current = null;
   }, [cleanUpResources]);
 
+  const toggleMute = useCallback(() => {
+      setIsMuted(prev => !prev);
+  }, []);
+
   return { 
       isSessionActive, 
       isConnecting, 
       isSpeaking, 
       isListening, 
+      isMuted,
       startSession, 
       stopSession, 
-      sessionError,
-      isMuted,
-      toggleMute
+      toggleMute,
+      sessionError 
   };
 };

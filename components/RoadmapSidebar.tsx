@@ -1,85 +1,70 @@
-
 import React from 'react';
 import { Course } from '../types';
 
 interface RoadmapSidebarProps {
-    course: Course;
-    currentLessonId: string;
-    completedLessons: string[];
-    onSelectLesson: (lessonId: string) => void;
-    isOpen: boolean;
+  course: Course;
+  completedLessons: string[];
+  currentLessonId: string;
+  onBack: () => void;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  onLessonClick: (lessonId: string) => void;
 }
 
-const RoadmapSidebar: React.FC<RoadmapSidebarProps> = ({
-    course,
-    currentLessonId,
-    completedLessons,
-    onSelectLesson,
-    isOpen
-}) => {
-    if (!isOpen) return null;
+const RoadmapSidebar: React.FC<RoadmapSidebarProps> = ({ course, completedLessons, currentLessonId, onBack, isOpen, setIsOpen, onLessonClick }) => {
+  let globalLessonIndex = 0;
 
-    return (
-        <div className="w-64 md:w-72 bg-[#131313] border-r border-[#262626] flex flex-col h-full flex-shrink-0 transition-all">
-            <div className="p-4 border-b border-[#262626]">
-                <h2 className="font-bold text-white">{course.title}</h2>
-                <div className="mt-2 w-full bg-[#0D0D0D] rounded-full h-1.5">
-                    <div
-                        className="bg-brand-green h-1.5 rounded-full transition-all duration-500"
-                        style={{
-                            width: `${Math.max(5, (completedLessons.length / course.modules.reduce((acc, m) => acc + m.lessons.length, 0)) * 100)}%`
-                        }}
-                    ></div>
-                </div>
-            </div>
+  return (
+    <aside className={`fixed inset-y-0 left-0 w-4/5 max-w-xs md:w-80 bg-[#181818] border-r border-[#262626] flex flex-col z-40 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <header className="p-4 border-b border-[#262626] flex items-center justify-between flex-shrink-0 h-16 bg-[#131313]">
+        <button onClick={onBack} className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 font-medium text-sm">
+            <i className="fas fa-arrow-left"></i> Back to Dashboard
+        </button>
+        {/* Mobile close button */}
+        <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500 p-2 hover:text-white transition-colors">
+            <i className="fas fa-times"></i>
+        </button>
+      </header>
+      
+      <div className="overflow-y-auto flex-grow scrollbar-hide p-4">
+        <h2 className="text-lg font-bold mb-6 text-white px-2">{course.title}</h2>
+        {course.modules.map((module) => (
+          <div key={module.id} className="mb-8">
+            <h3 className="font-bold text-brand-green mb-3 uppercase text-xs tracking-wider px-2 opacity-80">{module.title}</h3>
+            <ul className="space-y-1 relative"> 
+              {module.lessons.map((lesson, lessonIndex) => {
+                globalLessonIndex++;
+                const displayIndex = globalLessonIndex;
+                const isCompleted = completedLessons.includes(lesson.id);
+                const isCurrent = lesson.id === currentLessonId;
+                const isLastInModule = lessonIndex === module.lessons.length - 1;
 
-            <div className="flex-grow overflow-y-auto custom-scrollbar p-3 space-y-6">
-                {course.modules.map(module => (
-                    <div key={module.id}>
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-2">
-                            {module.title}
-                        </h3>
-                        <div className="space-y-1">
-                            {module.lessons.map((lesson, index) => {
-                                const isCompleted = completedLessons.includes(lesson.id);
-                                const isCurrent = lesson.id === currentLessonId;
-                                const isLocked = !isCompleted && !isCurrent && index > 0 && !completedLessons.includes(module.lessons[index - 1].id);
-
-                                return (
-                                    <button
-                                        key={lesson.id}
-                                        onClick={() => !isLocked && onSelectLesson(lesson.id)}
-                                        disabled={isLocked}
-                                        className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition-all ${
-                                            isCurrent
-                                                ? 'bg-[#B9FF66]/10 text-brand-green font-medium'
-                                                : isLocked
-                                                ? 'text-gray-600 cursor-not-allowed opacity-50'
-                                                : 'text-gray-400 hover:bg-[#1A1A1A] hover:text-gray-200'
-                                        }`}
-                                    >
-                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] ${
-                                            isCompleted
-                                                ? 'bg-brand-green text-black'
-                                                : isCurrent
-                                                ? 'border-2 border-brand-green text-transparent'
-                                                : isLocked
-                                                ? 'bg-[#262626] text-gray-500'
-                                                : 'border-2 border-gray-600'
-                                        }`}>
-                                            {isCompleted && <i className="fas fa-check"></i>}
-                                            {isLocked && <i className="fas fa-lock text-[8px]"></i>}
-                                        </div>
-                                        <span className="truncate text-sm">{lesson.title}</span>
-                                    </button>
-                                );
-                            })}
+                return (
+                  <li key={lesson.id} className="relative">
+                     {/* Connector Line - positioned absolutely relative to the ul/li but behind the button */}
+                    {!isLastInModule && (
+                         <div className="absolute left-[23px] top-8 bottom-[-4px] w-px bg-[#333] -z-10"></div>
+                    )}
+                    
+                    <button 
+                        onClick={() => onLessonClick(lesson.id)}
+                        className={`w-full flex items-center p-2 rounded-lg transition-all cursor-pointer text-left group relative z-10 ${isCurrent ? 'bg-[#262626]' : 'hover:bg-[#262626]/50'}`}
+                    >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-[2px] mr-3 flex-shrink-0 transition-all
+                            ${isCompleted ? 'bg-brand-green border-brand-green text-black' : isCurrent ? 'bg-[#B9FF66]/10 border-brand-green text-brand-green' : 'border-[#333] bg-[#181818] text-gray-500 group-hover:border-gray-500'}`}>
+                        {isCompleted ? <i className="fas fa-check text-xs font-bold"></i> : <span className="text-xs font-bold">{displayIndex}</span>}
                         </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+                        <span className={`text-sm font-medium leading-tight ${isCurrent ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{lesson.title}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
 };
 
 export default RoadmapSidebar;

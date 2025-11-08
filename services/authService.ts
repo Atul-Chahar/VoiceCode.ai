@@ -3,7 +3,8 @@ import {
     createUserWithEmailAndPassword, 
     signOut, 
     updateProfile,
-    signInWithPopup
+    signInWithPopup,
+    signInAnonymously
 } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 
@@ -44,6 +45,16 @@ export const authService = {
         }
     },
 
+    async loginAsGuest() {
+        try {
+            const result = await signInAnonymously(auth);
+            return result.user;
+        } catch (error: any) {
+            console.error("Firebase Guest Auth Error:", error.code, error.message);
+            throw new Error(mapFirebaseAuthErrorMessage(error.code));
+        }
+    },
+
     async logout() {
         try {
             await signOut(auth);
@@ -77,7 +88,8 @@ function mapFirebaseAuthErrorMessage(errorCode: string): string {
         case 'auth/popup-closed-by-user':
             return 'Sign-in popup was closed before completion.';
         case 'auth/operation-not-allowed':
-             return 'Sign-in method not enabled. Enable Email/Google in Firebase Console.';
+        case 'auth/admin-restricted-operation':
+             return 'Guest/Anonymous sign-in is disabled. Please enable it in the Firebase Console > Authentication > Sign-in method.';
         case 'auth/unauthorized-domain':
              return `Domain not authorized. Add ${window.location.hostname} to Firebase Console > Auth > Settings.`;
         case 'auth/network-request-failed':

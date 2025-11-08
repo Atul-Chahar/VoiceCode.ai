@@ -1,152 +1,150 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, setDoc, serverTimestamp, updateDoc, arrayUnion, runTransaction } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { Progress, CourseProgress } from '../types';
+import { INITIAL_PROGRESS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { CourseProgress } from '../types';
-import { INITIAL_PROGRESS, JAVASCRIPT_COURSE } from '../constants';
 
 export const useCourseProgress = (courseId: string) => {
-    const { user, loading: authLoading } = useAuth();
-    const [progress, setProgress] = useState<CourseProgress>(INITIAL_PROGRESS);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const [progress, setProgress] = useState<Progress>(INITIAL_PROGRESS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    // Helper to find the next lesson ID
-    const findNextLessonId = (currentId: string): string | null => {
-        let foundCurrent = false;
-        for (const module of JAVASCRIPT_COURSE.modules) {
-            for (const lesson of module.lessons) {
-                if (foundCurrent) return lesson.id;
-                if (lesson.id === currentId) foundCurrent = true;
-            }
-        }
-        return null;
-    };
+  // Helper to log permission errors clearly
+  const logPermissionError = (err: any) => {
+      if (err.code === 'permission-denied') {
+          console.warn(
+              "%cFIREBASE SETUP REQUIRED: Missing Security Rules\n" +
+              "%cYour app cannot access Firestore. Go to Firebase Console > Firestore Database > Rules and set:\n" +
+              "match /users/{userId}/{document=**} { allow read, write: if request.auth != null && request.auth.uid == userId; }",
+              "font-weight: bold; color: red; font-size: 12px;",
+              "color: orange;"
+          );
+          return "Database permissions missing (see console)";
+      }
+      return "Failed to sync data";
+  };
 
-    // Real-time subscription to progress
-    useEffect(() => {
-        if (authLoading) return;
+  // Real-time subscription to Firestore
+  useEffect(() => {
+    if (authLoading) return;
 
-        if (!user) {
-            // Demo mode: LocalStorage
-            const local = localStorage.getItem(`voicecode_progress_${courseId}`);
-            if (local) {
-                try {
-                    setProgress(JSON.parse(local));
-                } catch (e) {
-                    console.error("Failed to parse local progress", e);
-                    setProgress(INITIAL_PROGRESS);
-                }
+    if (!user) {
+        // DEMO MODE: Load from localStorage once on mount
+        try {
+            const localData = window.localStorage.getItem(`progress-${courseId}`);
+            if (localData) {
+                setProgress(JSON.parse(localData));
             } else {
                 setProgress(INITIAL_PROGRESS);
             }
-            setLoading(false);
-            return;
+        } catch (e) {
+            console.error("Local storage error", e);
+            setProgress(INITIAL_PROGRESS);
         }
+        setLoading(false);
+        return;
+    }
 
-        setLoading(true);
-        const unsubscribe = onSnapshot(
-            doc(db, 'users', user.id, 'progress', courseId),
-            (docSnap) => {
-                if (docSnap.exists()) {
-                    setProgress(docSnap.data() as CourseProgress);
-                } else {
-                    // Initialize if it doesn't exist
-                    setDoc(doc(db, 'users', user.id, 'progress', courseId), {
-                        ...INITIAL_PROGRESS,
-                        updatedAt: serverTimestamp()
-                    }, { merge: true });
-                    setProgress(INITIAL_PROGRESS);
-                }
-                setLoading(false);
-            },
-            (err) => {
-                console.error("Error syncing progress:", err);
-                setError("Failed to sync progress.");
-                setLoading(false);
-            }
-        );
+    setLoading(true);
+    const docRef = doc(db, 'users', user.id, 'progress', courseId);
 
-        return () => unsubscribe();
-    }, [user, courseId, authLoading]);
-
-    const updateProgress = useCallback(async (newProgress: Partial<CourseProgress>) => {
-        // Optimistic update
-        setProgress(prev => ({ ...prev, ...newProgress }));
-
-        if (!user) {
-             localStorage.setItem(`voicecode_progress_${courseId}`, JSON.stringify({ ...progress, ...newProgress }));
-             return;
-        }
-
-        try {
-            await setDoc(doc(db, 'users', user.id, 'progress', courseId), {
-                ...newProgress,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
-        } catch (err) {
-            console.error("Failed to save progress to Firestore:", err);
-            // Could revert optimistic update here if strictly necessary, 
-            // but usually we want to keep user moving and retry later.
-            setError("Failed to save progress online.");
-        }
-    }, [user, courseId, progress]);
-
-    const completeLesson = useCallback(async (lessonId: string, aiMemoryUpdate?: string[]) => {
-        // 1. Calculate new state based on current state (optimistic)
-        setProgress(prev => {
-            // A. Update completed lessons
-            const completedLessonIds = prev.completedLessonIds.includes(lessonId)
-                ? prev.completedLessonIds
-                : [...prev.completedLessonIds, lessonId];
-            
-            // B. Check for completed modules
-            let completedModuleIds = [...(prev.completedModuleIds || [])];
-            
-            JAVASCRIPT_COURSE.modules.forEach(module => {
-                // If module is not already marked complete
-                if (!completedModuleIds.includes(module.id)) {
-                    // Check if ALL lessons in this module are now in the completedLessonIds array
-                    const allLessonsComplete = module.lessons.every(l => completedLessonIds.includes(l.id));
-                    if (allLessonsComplete) {
-                        completedModuleIds.push(module.id);
-                    }
-                }
-            });
-
-            // C. Calculate next lesson and memory
-            const nextLessonId = findNextLessonId(lessonId) || lessonId;
-            const newMemory = aiMemoryUpdate ? [...(prev.aiMemory || []), ...aiMemoryUpdate] : (prev.aiMemory || []);
-
-            const newProgress: CourseProgress = {
-                ...prev,
-                completedLessonIds,
-                completedModuleIds,
-                currentLessonId: nextLessonId,
-                aiMemory: [...new Set(newMemory)] // Deduplicate memory
-            };
-
-            // 2. Persist to DB or LocalStorage
-            if (user) {
-                setDoc(doc(db, 'users', user.id, 'progress', courseId), {
-                    ...newProgress,
-                    updatedAt: serverTimestamp()
-                }, { merge: true }).catch(err => {
-                     console.error("Failed to save completion to Firestore:", err);
-                     setError("Failed to save progress online.");
+    const unsubscribe = onSnapshot(docRef, {
+        next: (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data() as CourseProgress;
+                // Map Firestore data model back to app internal Progress model
+                setProgress({
+                    completedLessons: data.completedLessonIds || [],
+                    currentLessonId: data.currentLessonId || INITIAL_PROGRESS.currentLessonId,
+                    aiMemory: data.aiMemory || INITIAL_PROGRESS.aiMemory
                 });
             } else {
-                localStorage.setItem(`voicecode_progress_${courseId}`, JSON.stringify(newProgress));
+                // If doc doesn't exist yet for authed user, use defaults (don't auto-create until they do something)
+                setProgress(INITIAL_PROGRESS);
             }
+            setLoading(false);
+            setError(null);
+        },
+        error: (err) => {
+            console.error("Firestore progress sync error:", err);
+            setError(logPermissionError(err));
+            setLoading(false);
+        }
+    });
 
-            return newProgress;
+    return () => unsubscribe();
+  }, [user, courseId, authLoading]);
+
+  // Helper to save to localStorage for demo users
+  const saveToLocal = (newProgress: Progress) => {
+      try {
+        window.localStorage.setItem(`progress-${courseId}`, JSON.stringify(newProgress));
+      } catch (e) {
+          console.error("Failed to save to localStorage", e);
+      }
+  };
+
+  const updateProgress = useCallback(async (newProgressData: Partial<Progress>) => {
+    if (!user) {
+        setProgress(prev => {
+            const updated = { ...prev, ...newProgressData };
+            saveToLocal(updated);
+            return updated;
         });
-    }, [user, courseId]);
+        return;
+    }
 
-    const setCurrentLesson = useCallback(async (lessonId: string) => {
-        updateProgress({ currentLessonId: lessonId });
-    }, [updateProgress]);
+    try {
+        const docRef = doc(db, 'users', user.id, 'progress', courseId);
+        // We need to map our internal Progress type to the Firestore CourseProgress type for saving
+        const updatePayload: any = { updatedAt: serverTimestamp() };
+        
+        if (newProgressData.currentLessonId !== undefined) updatePayload.currentLessonId = newProgressData.currentLessonId;
+        if (newProgressData.completedLessons !== undefined) updatePayload.completedLessonIds = newProgressData.completedLessons;
+        if (newProgressData.aiMemory !== undefined) updatePayload.aiMemory = newProgressData.aiMemory;
 
-    return { progress, loading, error, updateProgress, completeLesson, setCurrentLesson };
+        // setDoc with merge: true acts as both create-if-missing and update
+        await setDoc(docRef, updatePayload, { merge: true });
+    } catch (err: any) {
+        console.error("Failed to update progress:", err);
+        setError(logPermissionError(err));
+    }
+  }, [user, courseId]);
+
+  const completeLesson = useCallback(async (lessonId: string, nextLessonId: string) => {
+    if (!user) {
+         setProgress(prev => {
+            const newCompleted = prev.completedLessons.includes(lessonId) ? prev.completedLessons : [...prev.completedLessons, lessonId];
+            const updated = {
+                ...prev,
+                completedLessons: newCompleted,
+                currentLessonId: nextLessonId,
+                aiMemory: [...prev.aiMemory, `User completed lesson ${lessonId}.`]
+            };
+            saveToLocal(updated);
+            return updated;
+        });
+        return;
+    }
+
+    try {
+        const docRef = doc(db, 'users', user.id, 'progress', courseId);
+        // Atomic update using arrayUnion to prevent race conditions when adding completed lessons
+        await setDoc(docRef, {
+            completedLessonIds: arrayUnion(lessonId),
+            currentLessonId: nextLessonId,
+            aiMemory: arrayUnion(`User completed lesson ${lessonId}.`),
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+
+    } catch (err: any) {
+        console.error("Failed to complete lesson:", err);
+        setError(logPermissionError(err));
+    }
+  }, [user, courseId]);
+
+  return { progress, updateProgress, completeLesson, loading, error };
 };

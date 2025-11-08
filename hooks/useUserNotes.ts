@@ -14,6 +14,21 @@ export const useUserNotes = () => {
     
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Helper to log permission errors clearly (duplicated slightly to avoid circular deps, keep hooks independent)
+    const logPermissionError = (err: any) => {
+      if (err.code === 'permission-denied') {
+           console.warn(
+              "%cFIREBASE SETUP REQUIRED: Missing Security Rules\n" +
+              "%cYour app cannot access Firestore. Go to Firebase Console > Firestore Database > Rules and set:\n" +
+              "match /users/{userId}/{document=**} { allow read, write: if request.auth != null && request.auth.uid == userId; }",
+              "font-weight: bold; color: red; font-size: 12px;",
+              "color: orange;"
+          );
+          return "Database permissions missing (see console)";
+      }
+      return "Failed to sync notes";
+  };
+
     // Real-time subscription
     useEffect(() => {
         if (authLoading) return;
@@ -40,10 +55,11 @@ export const useUserNotes = () => {
                     setNotes('');
                 }
                 setIsLoading(false);
+                setError(null);
             },
-            (err) => {
+            (err: any) => {
                 console.error("Error syncing notes:", err);
-                setError("Failed to sync notes.");
+                setError(logPermissionError(err));
                 setIsLoading(false);
             }
         );
@@ -73,9 +89,9 @@ export const useUserNotes = () => {
                     updatedAt: serverTimestamp()
                 }, { merge: true });
                 setIsSaving(false);
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to save notes:", err);
-                setError("Failed to save latest changes.");
+                setError(logPermissionError(err));
                 setIsSaving(false);
             }
         }, 1000); // 1 second debounce

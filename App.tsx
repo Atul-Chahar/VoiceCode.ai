@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import LandingPage from './components/CourseSelection';
 import DashboardPage from './pages/DashboardPage';
@@ -14,27 +15,12 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations' | 'login' | 'signup';
 
-const VIEW_STORAGE_KEY = 'voicecode_current_view';
-
 const MainApp: React.FC = () => {
-  // Initialize view from localStorage if available, otherwise default to 'landing'
-  const [currentView, setCurrentView] = useState<View>(() => {
-      const savedView = localStorage.getItem(VIEW_STORAGE_KEY);
-      // Basic validation to ensure the saved string is actually a valid View type
-      const validViews: View[] = ['landing', 'pricing', 'courses', 'dashboard', 'lesson', 'explanations', 'login', 'signup'];
-      return (savedView && validViews.includes(savedView as View)) ? (savedView as View) : 'landing';
-  });
-
+  const [currentView, setCurrentView] = useState<View>('landing');
   const { user, loading } = useAuth();
 
-  // Persist view changes to localStorage
-  useEffect(() => {
-      localStorage.setItem(VIEW_STORAGE_KEY, currentView);
-  }, [currentView]);
-
   const navigateTo = useCallback((view: View) => {
-    // Protected routes logic handled in the effect below, 
-    // but we can also do a quick check here for immediate feedback
+    // Protected routes
     const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
     if (protectedViews.includes(view) && !user && !loading) {
        setCurrentView('login');
@@ -45,16 +31,14 @@ const MainApp: React.FC = () => {
     window.scrollTo(0, 0);
   }, [user, loading]);
 
-  // Effect to handle initial load redirection and protected routes
+  // Effect to handle initial load redirection if on a protected route
   useEffect(() => {
       if (!loading) {
           const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
-          
-          // If on a protected view but not logged in, redirect to login
           if (protectedViews.includes(currentView) && !user) {
               setCurrentView('login');
           }
-          // If on auth pages but already logged in, redirect to dashboard
+          // Redirect from auth pages if already logged in
           if ((currentView === 'login' || currentView === 'signup') && user) {
               setCurrentView('dashboard');
           }
@@ -64,11 +48,8 @@ const MainApp: React.FC = () => {
   const renderContent = () => {
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D]">
-                 <div className="flex flex-col items-center">
-                    <i className="fas fa-circle-notch fa-spin text-brand-green text-4xl mb-4"></i>
-                    <p className="text-gray-500 animate-pulse">Loading VoiceCode...</p>
-                 </div>
+            <div className="min-h-screen flex items-center justify-center">
+                 <i className="fas fa-circle-notch fa-spin text-brand-green text-4xl"></i>
             </div>
         );
     }
@@ -97,8 +78,7 @@ const MainApp: React.FC = () => {
   
   // Views that don't need standard Nav/Footer
   if (currentView === 'lesson') {
-      if (loading) return renderContent(); // Ensure loader shows even for lesson view
-      return renderContent();
+    return renderContent();
   }
 
   return (

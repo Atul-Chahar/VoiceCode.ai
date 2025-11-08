@@ -11,6 +11,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     signup: (name: string, email: string, password: string) => Promise<void>;
     loginWithGoogle: () => Promise<void>;
+    loginAsGuest: () => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -27,10 +28,12 @@ export const useAuth = () => {
 // Helper to map standard Firebase user format to our app's standard User format
 const mapUser = (fbUser: FirebaseUser | null): User | null => {
     if (!fbUser) return null;
+    // For anonymous users, email and displayName might be null.
+    const name = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Guest');
     return {
         id: fbUser.uid,
-        email: fbUser.email || '',
-        name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User'
+        email: fbUser.email || `guest_${fbUser.uid.slice(0,5)}@voicecode.ai`, // fake email for internal consistency if needed
+        name: name
     };
 };
 
@@ -65,12 +68,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await authService.loginWithGoogle();
     }
 
+    const loginAsGuest = async () => {
+        await authService.loginAsGuest();
+    }
+
     const logout = async () => {
         await authService.logout();
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, loginAsGuest, logout }}>
             {children}
         </AuthContext.Provider>
     );
