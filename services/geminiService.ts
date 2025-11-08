@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from "@google/genai";
 import { Progress, Lesson } from "../types";
 
@@ -8,7 +7,8 @@ let aiClient: GoogleGenAI | null = null;
 function getAiClient(): GoogleGenAI {
     if (!aiClient) {
         const apiKey = process.env.API_KEY;
-        if (!apiKey) {
+        if (!apiKey || apiKey.trim() === '') {
+            console.error("FATAL: API_KEY is missing from environment.");
             throw new Error("API_KEY is missing. Please set it in your environment variables.");
         }
         aiClient = new GoogleGenAI({ apiKey });
@@ -69,7 +69,7 @@ export const startLiveSession = (
         onclose: (e: CloseEvent) => void;
     }
 ): Promise<LiveSession> => {
-    const { currentLessonId, aiMemory } = progress;
+    const { aiMemory } = progress;
 
     // Inject strict lesson protocols if a lesson is active
     const lessonProtocol = currentLesson ? `

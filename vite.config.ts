@@ -4,7 +4,11 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, process.cwd(), '');
+
+  // Vercel injects env vars into process.env during build.
+  // We check both 'env' (Vite's loader) and 'process.env' (Node's actual process)
+  const apiKey = env.API_KEY || process.env.API_KEY;
 
   return {
     plugins: [react()],
@@ -12,10 +16,10 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
     },
     define: {
-      // Prevent "process is not defined" errors in browser
+      // Critical: explicitly replace process.env.API_KEY with the string value.
+      'process.env.API_KEY': JSON.stringify(apiKey),
+      // Polyfill remaining process.env calls to avoid 'process is not defined' browser errors
       'process.env': {},
-      // Specific override for the API key to ensure it's injected securely at build time
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
     }
   }
 })
