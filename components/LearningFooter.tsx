@@ -1,32 +1,23 @@
+
 import React from 'react';
 
 interface LearningFooterProps {
-    onRun: () => void;
-    onReset: () => void;
     onComplete: () => void;
     isCompleting?: boolean;
 }
 
-const LearningFooter: React.FC<LearningFooterProps> = ({ onRun, onReset, onComplete, isCompleting = false }) => {
+const LearningFooter: React.FC<LearningFooterProps> = ({ onComplete, isCompleting = false }) => {
     return (
-        <footer className="h-auto md:h-20 p-3 md:p-4 border-t border-[#262626] bg-[#181818] flex-shrink-0 flex flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-                <button onClick={onRun} className="btn-secondary px-3 py-2 md:px-4 md:py-2 rounded-lg flex items-center gap-2 text-xs md:text-sm font-medium">
-                    <i className="fas fa-play text-brand-green"></i> <span className="hidden sm:inline">Run</span>
-                </button>
-                <button onClick={onReset} className="btn-secondary px-3 py-2 md:px-4 md:py-2 rounded-lg flex items-center gap-2 text-xs md:text-sm font-medium text-gray-400 hover:text-white">
-                    <i className="fas fa-undo"></i> <span className="hidden sm:inline">Reset</span>
-                </button>
-            </div>
+        <footer className="h-auto md:h-20 p-4 border-t border-[#262626] bg-[#131313] flex-shrink-0 flex items-center justify-end">
             <button
                 onClick={onComplete}
                 disabled={isCompleting}
-                className={`btn-primary px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-bold text-xs md:text-sm flex items-center whitespace-nowrap shadow-lg shadow-brand-green/10 transition-all ${isCompleting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`btn-primary px-6 py-3 rounded-xl font-bold text-sm md:text-base flex items-center whitespace-nowrap shadow-lg shadow-brand-green/10 transition-all ${isCompleting ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'}`}
             >
                 {isCompleting ? (
-                    <><i className="fas fa-spinner fa-spin mr-2"></i> Saving...</>
+                    <><i className="fas fa-spinner fa-spin mr-2"></i> Saving Progress...</>
                 ) : (
-                    <>Next Lesson <i className="fas fa-arrow-right ml-2"></i></>
+                    <>Complete & Continue <i className="fas fa-arrow-right ml-3"></i></>
                 )}
             </button>
         </footer>

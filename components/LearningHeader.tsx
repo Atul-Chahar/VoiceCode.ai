@@ -30,7 +30,7 @@ const LearningHeader: React.FC<LearningHeaderProps> = ({ lessonTitle, courseTitl
                 className="flex-shrink-0 btn-secondary px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm flex items-center gap-2 hover:text-brand-green hover:border-brand-green transition-all"
             >
                 <i className="fas fa-book-open"></i> 
-                <span className="hidden sm:inline">Explanations</span>
+                <span className="hidden sm:inline">Study Material</span>
             </button>
         </header>
     );

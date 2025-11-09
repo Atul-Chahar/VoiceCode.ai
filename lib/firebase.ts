@@ -1,12 +1,14 @@
 
 import * as firebaseApp from 'firebase/app';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager,
-  type Firestore
+  persistentMultipleTabManager
 } from 'firebase/firestore';
+
+// Cast to any to avoid TS errors in some environments where firebase/app exports are not correctly detected
+const { initializeApp, getApps, getApp } = firebaseApp as any;
 
 // Your web app's Firebase configuration
 // Use (import.meta as any).env to avoid TypeScript errors if Vite types aren't strictly loaded.
@@ -22,14 +24,15 @@ const firebaseConfig = {
 
 // Initialize Firebase singleton.
 // Prevents re-initialization errors during hot-reloads in development.
-// Using namespace import to avoid potential issues with named exports in some environments.
-const app: firebaseApp.FirebaseApp = firebaseApp.getApps().length > 0 ? firebaseApp.getApp() : firebaseApp.initializeApp(firebaseConfig);
+const app = (getApps().length > 0) 
+    ? getApp() 
+    : initializeApp(firebaseConfig);
 
 // Initialize and export services
-export const auth: Auth = getAuth(app);
+export const auth = getAuth(app);
 
 // Initialize Firestore with persistent local cache for offline support
-export const db: Firestore = initializeFirestore(app, {
+export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })

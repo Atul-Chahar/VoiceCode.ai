@@ -208,7 +208,7 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
         />
         
         <div className="flex-grow flex flex-col md:grid md:grid-cols-2 gap-4 p-2 md:p-4 overflow-hidden min-h-0">
-          <div className="h-[35%] md:h-auto min-h-0 flex-shrink-0 md:flex-shrink">
+          <div className="h-[35%] md:h-full min-h-0 flex-shrink-0">
                <ConversationPanel 
                 isSessionActive={isSessionActive}
                 isConnecting={isConnecting}
@@ -222,21 +222,21 @@ const LearningView: React.FC<LearningViewProps> = ({ course, navigateTo }) => {
                 sessionError={sessionError}
               />
           </div>
-          <div className="flex-1 md:h-auto min-h-0">
+          <div className="flex-1 md:h-full min-h-0">
               <CodeWorkspace 
                 code={editorCode}
                 onCodeChange={(val) => setEditorCode(val || '')}
                 output={consoleOutput}
                 exercises={currentLesson?.content.exercises || []}
                 onRunTests={handleRunTests}
+                onRunCode={handleRunCode}
+                onResetCode={handleResetCode}
               />
           </div>
         </div>
 
         <LearningFooter 
             onComplete={handleCompleteLesson}
-            onRun={handleRunCode}
-            onReset={handleResetCode}
             isCompleting={isCompleting}
         />
       </main>

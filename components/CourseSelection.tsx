@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { View } from '../App';
+import Hero3D from './Hero3D';
 
 interface DemoMessage {
     type: 'user' | 'ai';
@@ -79,40 +81,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigateTo }) => {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [demoMessages]);
+return (
+  <div className="bg-[rgb(0,0,0)]">
 
-    return (
-    <>
-    {/* Hero Section */}
-    <section className="min-h-screen flex items-center justify-center relative pt-20 px-4">
-        <div className="absolute inset-0 bg-grid-white/[0.05] [mask-image:linear-gradient(to_bottom,white_5%,transparent_100%)]"></div>
-        
-        <div className="max-w-7xl mx-auto text-center relative z-10">
-             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-                Code With Your Voice
-                <br />
-                <span className="text-brand-green">Learn By Conversation</span>
-            </h1>
-            
-            <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-3xl mx-auto px-4">
-                Simply talk to your AI mentor while coding. Describe problems naturally, 
-                get verbal explanations, and debug through conversation - like pair programming with a patient expert.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onClick={startSession} className="btn-primary px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center">
-                    <i className="fas fa-microphone mr-3"></i>
-                    Start Voice Session
-                </button>
-                <button className="btn-secondary px-8 py-4 rounded-lg font-semibold text-lg">
-                    <i className="fas fa-play mr-3"></i>
-                    Watch Demo
-                </button>
-            </div>
-        </div>
-    </section>
+
+    {/* Hero Section with Spline Animation */}
+    <Hero3D />
 
     {/* Features Grid */}
-    <section id="features" className="py-20 px-4">
+    <section id="features" className="py-20 px-4 relative z-10 bg-[rgb(0,0,0)]">
         <div className="max-w-7xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-bold text-center mb-4">
                 Coding Education <span className="text-brand-green">Reimagined</span>
@@ -306,7 +283,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigateTo }) => {
             </div>
         </div>
     </section>
-    </>
+    </div>
     );
 };
 

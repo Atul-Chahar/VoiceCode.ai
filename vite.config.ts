@@ -4,11 +4,12 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '');
+  // Cast process to 'any' to avoid TS errors if @types/node is missing.
+  const env = loadEnv(mode, (process as any).cwd(), '');
 
   // Vercel injects env vars into process.env during build.
   // We check both 'env' (Vite's loader) and 'process.env' (Node's actual process)
-  const apiKey = env.API_KEY || process.env.API_KEY;
+  const apiKey = env.API_KEY || (process as any).env?.API_KEY;
 
   return {
     plugins: [react()],

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { ConsoleOutput } from '../types';
 
@@ -27,16 +28,17 @@ const ConsolePanel: React.FC<ConsolePanelProps> = ({ output }) => {
 
     return (
         <div className="bg-[#181818] rounded-lg flex flex-col h-full border border-[#262626]">
-            <header className="p-2 px-4 border-b border-[#262626]">
-                <h2 className="font-semibold text-white text-sm">Console</h2>
-            </header>
-            <div className="flex-grow p-4 overflow-y-auto font-mono text-sm">
+            {/* Header removed as it's now redundant with tabs */}
+            <div className="flex-grow p-4 overflow-y-auto font-mono text-sm custom-scrollbar">
+                {output.length === 0 && (
+                    <div className="text-gray-600 italic">Console output will appear here...</div>
+                )}
                 {output.map((line, index) => {
                     const { icon, color } = getIconAndColor(line.type);
                     return (
                         <div key={index} className={`flex items-start gap-2 mb-1 ${color}`}>
-                            <i className={`fas ${icon} mt-1`}></i>
-                            <span className="flex-1 whitespace-pre-wrap">{line.message}</span>
+                            <i className={`fas ${icon} mt-1 opacity-70`}></i>
+                            <span className="flex-1 whitespace-pre-wrap break-all">{line.message}</span>
                         </div>
                     );
                 })}

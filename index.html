@@ -6,6 +6,7 @@
     <title>VoiceCode AI - Your Conversational Coding Companion</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.75/build/spline-viewer.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
@@ -17,7 +18,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background: #0D0D0D;
+            background: #050A14;
             color: #F5F5F5;
             overflow-x: hidden;
         }
@@ -53,25 +54,25 @@
 
         .btn-secondary {
             background-color: transparent;
-            border: 1px solid #262626;
+            border: 1px solid #1e293b;
             color: #F5F5F5;
             font-weight: 500;
             transition: all 0.3s ease;
         }
 
         .btn-secondary:hover {
-            background-color: #181818;
+            background-color: #0f172a;
             border-color: #444;
         }
 
         .dark-card {
-            background-color: #181818;
-            border: 1px solid #262626;
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
             transition: border-color 0.3s ease;
         }
         
         .dark-card:hover {
-            border-color: #444;
+            border-color: #475569;
         }
 
         .voice-bar {
@@ -108,7 +109,7 @@
         }
         
         .mobile-menu {
-            background: rgba(13, 13, 13, 0.9);
+            background: rgba(5, 10, 20, 0.9);
             backdrop-filter: blur(10px);
         }
     </style>
@@ -123,12 +124,13 @@
     "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/",
     "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.80.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.2",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0",
+    "@splinetool/react-spline": "https://aistudiocdn.com/@splinetool/react-spline@^4.1.0"
   }
 }
 </script>
 </head>
-<body class="bg-black text-white font-sans">
+<body class="bg-[#050A14] text-white font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

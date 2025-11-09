@@ -12,7 +12,8 @@ export const useUserNotes = () => {
     const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // Use 'any' for the timeout ref to avoid dependency on @types/node
+    const saveTimeoutRef = useRef<any>(null);
 
     // Helper to log permission errors clearly (duplicated slightly to avoid circular deps, keep hooks independent)
     const logPermissionError = (err: any) => {
