@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './styles/globals.css';
 
 // Polyfill for environments where standard React JSX types might be missing or not loaded correctly.
 // This ensures all standard HTML elements (div, p, span, etc.) are recognized.

@@ -1,0 +1,52 @@
+/* Carousel Animation */
+@keyframes carousel-fade {
+    0% {
+        opacity: 0;
+        z-index: 10;
+    }
+
+    5% {
+        opacity: 1;
+        z-index: 20;
+    }
+
+    28% {
+        opacity: 1;
+        z-index: 20;
+    }
+
+    33% {
+        opacity: 0;
+        z-index: 10;
+    }
+
+    100% {
+        opacity: 0;
+        z-index: 10;
+    }
+}
+
+.animate-carousel {
+    animation: carousel-fade 15s infinite;
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.carousel-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    min-height: 600px;
+}
+
+@media (min-width: 1024px) {
+    .carousel-container {
+        min-height: auto;
+    }
+}
+
+.carousel-card {
+    grid-area: 1 / 1 / 2 / 2;
+}

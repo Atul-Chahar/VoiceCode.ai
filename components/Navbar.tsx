@@ -10,7 +10,6 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ navigateTo, currentView }) => {
     const { user, logout } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -22,86 +21,61 @@ const Navbar: React.FC<NavbarProps> = ({ navigateTo, currentView }) => {
 
     const handleNavigation = (view: View) => {
         navigateTo(view);
-        setIsMobileMenuOpen(false);
-    };
-
-    const handleLogout = async () => {
-        await logout();
-        navigateTo('landing');
-        setIsMobileMenuOpen(false);
     };
 
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-[#0D0D0D]/90 backdrop-blur-md py-4 border-b border-[#262626]' : 'bg-transparent py-6'}`}>
-            <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-                <button onClick={() => handleNavigation('landing')} className="flex items-center space-x-3 group">
-                    <div className="w-10 h-10 rounded-xl bg-[#B9FF66]/10 flex items-center justify-center group-hover:bg-[#B9FF66] transition-all duration-300">
-                        <i className="fas fa-code text-brand-green group-hover:text-black transition-colors"></i>
-                    </div>
-                    <span className="text-2xl font-bold text-white">Voice<span className="text-brand-green">Code</span></span>
-                </button>
+        <div className="fixed flex w-full z-50 pt-6 pr-4 pl-4 top-0 left-0 justify-center">
+            <nav
+                className="shadow-black/50 flex md:gap-12 md:w-auto bg-black/60 w-full max-w-5xl rounded-full pt-2 pr-2 pb-2 pl-6 shadow-2xl backdrop-blur-xl gap-x-8 gap-y-8 items-center justify-between"
+                style={{
+                    position: 'relative',
+                    '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2))',
+                    '--border-radius-before': '9999px'
+                } as React.CSSProperties}
+            >
+                <div className="flex items-center gap-2 shrink-0 cursor-pointer" onClick={() => handleNavigation('landing')}>
+                    <span className="text-base font-medium tracking-tight text-white font-sans">VoiceCode</span>
+                </div>
 
-                {/* Desktop Navigation */}
-                <div className="hidden md:flex items-center space-x-8">
-                    {!user ? (
-                        <>
-                            <button onClick={() => handleNavigation('landing')} className={`text-sm font-medium transition-colors hover:text-brand-green ${currentView === 'landing' ? 'text-brand-green' : 'text-gray-300'}`}>Home</button>
-                            <button onClick={() => handleNavigation('courses')} className={`text-sm font-medium transition-colors hover:text-brand-green ${currentView === 'courses' ? 'text-brand-green' : 'text-gray-300'}`}>Courses</button>
-                            <button onClick={() => handleNavigation('pricing')} className={`text-sm font-medium transition-colors hover:text-brand-green ${currentView === 'pricing' ? 'text-brand-green' : 'text-gray-300'}`}>Pricing</button>
-                            <button onClick={() => handleNavigation('login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Sign In</button>
-                            <button onClick={() => handleNavigation('signup')} className="btn-primary px-6 py-2.5 rounded-lg font-bold text-sm">Get Started</button>
-                        </>
-                    ) : (
-                        <>
-                             <button onClick={() => handleNavigation('dashboard')} className={`text-sm font-medium transition-colors hover:text-brand-green ${currentView === 'dashboard' ? 'text-brand-green' : 'text-gray-300'}`}>Dashboard</button>
-                             <button onClick={() => handleNavigation('courses')} className={`text-sm font-medium transition-colors hover:text-brand-green ${currentView === 'courses' ? 'text-brand-green' : 'text-gray-300'}`}>Courses</button>
-                             <div className="flex items-center gap-4 ml-4 pl-4 border-l border-[#262626]">
-                                <span className="text-sm text-gray-400">Hi, {user.name.split(' ')[0]}</span>
-                                <button onClick={handleLogout} className="text-sm font-medium text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-                                    <i className="fas fa-sign-out-alt"></i> Logout
-                                </button>
-                             </div>
-                        </>
+                <div className="hidden md:flex items-center gap-6">
+                    <button onClick={() => handleNavigation('landing')} className={`text-xs font-medium transition-colors font-sans ${currentView === 'landing' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>Product</button>
+                    <button onClick={() => handleNavigation('courses')} className={`text-xs font-medium transition-colors font-sans ${currentView === 'courses' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>Courses</button>
+                    <button onClick={() => handleNavigation('pricing')} className={`text-xs font-medium transition-colors font-sans ${currentView === 'pricing' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>Pricing</button>
+                    {user && (
+                        <button onClick={() => handleNavigation('dashboard')} className={`text-xs font-medium transition-colors font-sans ${currentView === 'dashboard' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>Dashboard</button>
                     )}
                 </div>
 
-                {/* Mobile Menu Button */}
-                <button 
-                    className="md:hidden text-gray-300 hover:text-white focus:outline-none"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                >
-                    <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'} text-2xl`}></i>
-                </button>
-            </div>
-
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden absolute top-full left-0 w-full bg-[#0D0D0D] border-b border-[#262626] py-4 px-4 flex flex-col space-y-4 animate-fade-in shadow-2xl">
+                <div className="flex items-center gap-4 shrink-0">
                     {!user ? (
                         <>
-                            <button onClick={() => handleNavigation('landing')} className={`text-left py-2 font-medium ${currentView === 'landing' ? 'text-brand-green' : 'text-gray-300'}`}>Home</button>
-                            <button onClick={() => handleNavigation('courses')} className={`text-left py-2 font-medium ${currentView === 'courses' ? 'text-brand-green' : 'text-gray-300'}`}>Courses</button>
-                            <button onClick={() => handleNavigation('pricing')} className={`text-left py-2 font-medium ${currentView === 'pricing' ? 'text-brand-green' : 'text-gray-300'}`}>Pricing</button>
-                            <div className="h-px bg-[#262626] my-2"></div>
-                            <button onClick={() => handleNavigation('login')} className="text-left py-2 font-medium text-gray-300">Sign In</button>
-                            <button onClick={() => handleNavigation('signup')} className="btn-primary py-3 rounded-lg font-bold text-center">Get Started</button>
-                        </>
-                    ) : (
-                        <>
-                            <button onClick={() => handleNavigation('dashboard')} className={`text-left py-2 font-medium ${currentView === 'dashboard' ? 'text-brand-green' : 'text-gray-300'}`}>Dashboard</button>
-                            <button onClick={() => handleNavigation('courses')} className={`text-left py-2 font-medium ${currentView === 'courses' ? 'text-brand-green' : 'text-gray-300'}`}>Courses</button>
-                            <div className="h-px bg-[#262626] my-2"></div>
-                            <div className="flex items-center justify-between py-2 text-gray-400">
-                                <span>Signed in as <span className="text-white font-bold">{user.name}</span></span>
-                            </div>
-                            <button onClick={handleLogout} className="text-left py-2 font-medium text-red-400 hover:text-red-300 flex items-center gap-2">
-                                <i className="fas fa-sign-out-alt"></i> Logout
+                            <button onClick={() => handleNavigation('login')} className="hidden md:block text-xs font-medium text-gray-300 hover:text-white transition-colors font-sans">Sign in</button>
+                            <button onClick={() => handleNavigation('signup')} className="group inline-flex overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(255,255,255,0.1)] rounded-full pt-[1px] pr-[1px] pb-[1px] pl-[1px] relative items-center justify-center">
+                                {/* Spinning Border Beam (Visible on Hover) */}
+                                <span className="absolute inset-[-100%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,transparent_75%,#ffffff_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
+
+                                {/* Default Static Border */}
+                                <span className="transition-opacity duration-300 group-hover:opacity-0 bg-zinc-800 rounded-full absolute top-0 right-0 bottom-0 left-0"></span>
+
+                                {/* 3D Button Surface & Content */}
+                                <span className="flex items-center justify-center gap-2 uppercase transition-colors duration-300 group-hover:text-white text-xs font-medium text-zinc-400 tracking-widest bg-gradient-to-b from-zinc-800 to-zinc-950 w-full h-full rounded-full pt-2.5 pr-6 pb-2.5 pl-6 relative shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]">
+                                    <span className="relative z-10">Get Started</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 transition-transform duration-300 group-hover:translate-x-0.5">
+                                        <path d="M5 12h14"></path>
+                                        <path d="m12 5 7 7-7 7"></path>
+                                    </svg>
+                                </span>
                             </button>
                         </>
+                    ) : (
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs text-gray-400 hidden sm:inline">Hi, {user.name.split(' ')[0]}</span>
+                            <button onClick={() => logout()} className="text-xs font-medium text-gray-400 hover:text-white transition-colors">Logout</button>
+                        </div>
                     )}
                 </div>
-            )}
-        </nav>
+            </nav>
+        </div>
     );
 };
 
