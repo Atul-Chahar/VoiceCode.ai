@@ -5,6 +5,7 @@ import { useCourseProgress } from '../hooks/useCourseProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { StatCard, ActivityChart, DailyGoalsWidget } from '../components/DashboardWidgets';
 import CourseDetailsModal from '../components/CourseDetailsModal';
+import CertificateModal from '../components/CertificateModal';
 
 interface DashboardPageProps {
   navigateTo: (view: View) => void;
@@ -14,6 +15,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
   const { user } = useAuth();
   const { progress } = useCourseProgress(JAVASCRIPT_COURSE.id);
   const [showDetails, setShowDetails] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
 
   const totalLessons = JAVASCRIPT_COURSE.modules.reduce((acc, module) => acc + module.lessons.length, 0);
   const completedLessonsCount = progress.completedLessons.length;
@@ -53,10 +55,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCertificate(true)}
+              className="h-10 px-4 rounded-full bg-gradient-to-r from-orange-600 to-orange-500 text-white border border-orange-400 text-sm font-bold shadow-[0_0_15px_-3px_rgba(249,115,22,0.4)] hover:scale-105 transition-all flex items-center gap-2"
+            >
+              <i className="fas fa-certificate"></i> Get Certificate
+            </button>
             <button className="h-10 px-4 rounded-full bg-zinc-900 border border-white/10 text-zinc-400 text-sm font-medium hover:text-white hover:border-white/20 transition-all flex items-center gap-2">
               <i className="fas fa-calendar-alt"></i> Today
             </button>
-            <button className="h-10 w-10 rounded-full bg-orange-500 text-black flex items-center justify-center hover:scale-105 transition-transform shadow-[0_0_20px_-5px_rgba(249,115,22,0.5)]">
+            <button className="h-10 w-10 rounded-full bg-zinc-800 text-zinc-400 border border-white/5 flex items-center justify-center hover:bg-zinc-700 hover:text-white transition-colors">
               <i className="fas fa-plus"></i>
             </button>
           </div>
@@ -177,6 +185,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
           setShowDetails(false);
           navigateTo('lesson');
         }}
+      />
+
+      <CertificateModal
+        isOpen={showCertificate}
+        onClose={() => setShowCertificate(false)}
+        courseName="JavaScript Mastery"
       />
     </div>
   );
