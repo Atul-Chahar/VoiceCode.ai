@@ -17,11 +17,11 @@ interface CodeWorkspaceProps {
 
 type Tab = 'console' | 'exercises';
 
-const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({ 
-    code, 
-    onCodeChange, 
-    output, 
-    exercises, 
+const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
+    code,
+    onCodeChange,
+    output,
+    exercises,
     onRunTests,
     onRunCode,
     onResetCode
@@ -30,41 +30,54 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
 
     return (
         <div className="flex flex-col h-full gap-4">
-            <div className="flex-[3] min-h-0">
-                <EditorPanel code={code} onCodeChange={onCodeChange} />
+            <div className="flex-[3] min-h-0 bg-zinc-900/40 backdrop-blur-md rounded-[1.5rem] border border-white/5 overflow-hidden shadow-xl flex flex-col relative group">
+                {/* Editor Header decoration */}
+                <div className="h-1 w-full bg-gradient-to-r from-orange-500/20 to-purple-500/20"></div>
+                <div className="flex-grow relative">
+                    <EditorPanel code={code} onCodeChange={onCodeChange} />
+                </div>
             </div>
-            <div className="flex-[2] min-h-0 flex flex-col">
-                 <div className="flex items-center justify-between mb-2 shrink-0">
-                    <div className="flex gap-2">
-                        <button 
+
+            <div className="flex-[2] min-h-0 flex flex-col bg-zinc-900/40 backdrop-blur-md rounded-[1.5rem] border border-white/5 overflow-hidden shadow-xl">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-black/20 shrink-0">
+                    <div className="flex gap-4">
+                        <button
                             onClick={() => setActiveTab('console')}
-                            className={`px-4 py-1.5 text-sm rounded-t-lg font-medium transition-colors ${activeTab === 'console' ? 'bg-[#181818] text-brand-green border-t border-l border-r border-[#262626]' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`pb-2 text-sm font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'console' ? 'border-orange-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
                         >
                             <i className="fas fa-terminal mr-2"></i> Console
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('exercises')}
-                            className={`px-4 py-1.5 text-sm rounded-t-lg font-medium transition-colors ${activeTab === 'exercises' ? 'bg-[#181818] text-brand-green border-t border-l border-r border-[#262626]' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`pb-2 text-sm font-bold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'exercises' ? 'border-orange-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
                         >
-                             <i className="fas fa-dumbbell mr-2"></i> Exercises
-                             {exercises.length > 0 && <span className="ml-2 bg-[#262626] text-xs px-1.5 rounded-full text-gray-400">{exercises.length}</span>}
+                            <i className="fas fa-dumbbell mr-2"></i> Exercises
+                            {exercises.length > 0 && <span className="ml-2 bg-zinc-800 text-[10px] px-1.5 py-0.5 rounded-full text-zinc-400 border border-white/10">{exercises.length}</span>}
                         </button>
                     </div>
-                    
-                    {/* Action Buttons moved here from footer */}
-                    <div className="flex items-center gap-2">
-                        <button onClick={onResetCode} className="px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium text-gray-400 hover:text-white hover:bg-[#262626] transition-colors" title="Reset Code">
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={onResetCode}
+                            className="px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold text-zinc-500 hover:text-white hover:bg-white/10 transition-colors uppercase tracking-wider"
+                            title="Reset Code"
+                        >
                             <i className="fas fa-undo"></i>
                             <span className="hidden sm:inline">Reset</span>
                         </button>
-                        <button onClick={onRunCode} className="bg-brand-green/10 text-brand-green hover:bg-brand-green/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-colors" title="Run Code">
+                        <button
+                            onClick={onRunCode}
+                            className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-5 py-2 rounded-xl flex items-center gap-2 text-xs font-bold transition-all shadow-lg shadow-orange-500/20 transform hover:scale-105"
+                            title="Run Code"
+                        >
                             <i className="fas fa-play"></i>
-                            <span className="hidden sm:inline">Run</span>
+                            <span className="hidden sm:inline">Run Code</span>
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-grow relative">
+                <div className="flex-grow relative bg-black/20">
                     {activeTab === 'console' ? (
                         <ConsolePanel output={output} />
                     ) : (

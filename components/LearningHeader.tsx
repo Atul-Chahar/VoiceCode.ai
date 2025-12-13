@@ -11,26 +11,26 @@ interface LearningHeaderProps {
 
 const LearningHeader: React.FC<LearningHeaderProps> = ({ lessonTitle, courseTitle, toggleSidebar, isSidebarOpen, navigateTo }) => {
     return (
-        <header className="h-14 md:h-16 px-3 md:px-4 border-b border-[#262626] flex items-center justify-between bg-[#181818] flex-shrink-0">
-            <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
-                <button 
-                    onClick={toggleSidebar} 
-                    className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#262626] text-gray-400 hover:text-white transition-colors flex-shrink-0"
+        <header className="h-16 px-4 md:px-6 border-b border-white/5 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md flex-shrink-0 relative z-20">
+            <div className="flex items-center gap-4">
+                <button
+                    onClick={toggleSidebar}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all border border-white/5"
                     aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
                 >
                     <i className={`fas ${isSidebarOpen && window.innerWidth >= 768 ? 'fa-outdent' : 'fa-indent'} text-lg`}></i>
                 </button>
-                <div className="overflow-hidden">
-                    <p className="text-xs text-gray-500 truncate hidden md:block">{courseTitle}</p>
-                    <h1 className="font-bold text-sm md:text-lg text-white truncate">{lessonTitle}</h1>
+                <div>
+                    <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest hidden md:block mb-0.5">{courseTitle}</p>
+                    <h1 className="font-bold text-sm md:text-lg text-white font-manrope">{lessonTitle}</h1>
                 </div>
             </div>
-            <button 
+            <button
                 onClick={() => navigateTo('explanations')}
-                className="flex-shrink-0 btn-secondary px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm flex items-center gap-2 hover:text-brand-green hover:border-brand-green transition-all"
+                className="flex-shrink-0 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs md:text-sm font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-2"
             >
-                <i className="fas fa-book-open"></i> 
-                <span className="hidden sm:inline">Study Material</span>
+                <i className="fas fa-book-open text-orange-500"></i>
+                <span className="hidden sm:inline">Reference Guide</span>
             </button>
         </header>
     );
