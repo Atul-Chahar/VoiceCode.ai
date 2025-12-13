@@ -1,5 +1,5 @@
 {
-    "name": "VoiceCode - Course Certificate Generator",
+    "name": "VoiceCode - Instant Certificate Button",
     "flow": [
         {
             "id": 1,
@@ -7,7 +7,7 @@
             "version": 1,
             "parameters": {},
             "mapper": {
-                "name": "VoiceCode Certificate Trigger"
+                "name": "Instant Certificate Trigger (Button Click)"
             },
             "metadata": {
                 "designer": {
@@ -22,8 +22,8 @@
             "version": 1,
             "parameters": {
                 "title": "Certificate - {{1.userName}}",
-                "templateId": "[SELECT_YOUR_TEMPLATE_ID]",
-                "folderId": "[SELECT_TARGET_FOLDER_ID]"
+                "templateId": "[SELECT_YOUR_TEMPLATE_ID_HERE]",
+                "folderId": "[SELECT_TARGET_FOLDER_ID_HERE]"
             },
             "mapper": {
                 "name": "{{1.userName}}",
@@ -60,11 +60,11 @@
             "parameters": {},
             "mapper": {
                 "to": "{{1.email}}",
-                "subject": "Congratulations! Here is your {{1.courseName}} Certificate",
-                "content": "<p>Hi {{1.userName}},</p><p>Great job completing the course! Find your certificate attached.</p>",
+                "subject": "Here is your {{1.courseName}} Certificate! 🎓",
+                "content": "<div style=\"font-family: sans-serif;\"><h2>Congratulations {{1.userName}}!</h2><p>You have successfully completed the <b>{{1.courseName}}</b>.</p><p>We are proud of your achievement. Please find your official certificate attached.</p><br><p>Keep Coding,<br>The VoiceCode Team</p></div>",
                 "attachments": [
                     {
-                        "fileName": "Certificate.pdf",
+                        "fileName": "Certificate_{{1.userName}}.pdf",
                         "data": "{{3.data}}"
                     }
                 ]

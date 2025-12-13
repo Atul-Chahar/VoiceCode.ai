@@ -12,7 +12,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, onClose, co
     const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
     // ⚠️ REPLACE THIS WITH YOUR ACTUAL MAKE.COM WEBHOOK URL
-    const MAKE_WEBHOOK_URL = 'https://hook.us1.make.com/YOUR_WEBHOOK_URL_HERE';
+    const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/2gdswt5wakdw678e13kzm8tyclhvt3ji';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
