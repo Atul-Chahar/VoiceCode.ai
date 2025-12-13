@@ -1,0 +1,116 @@
+{
+    "name": "VoiceCode - Inactivity Motivation",
+    "flow": [
+        {
+            "id": 1,
+            "module": "google-cloud-firestore:SearchDocuments",
+            "version": 1,
+            "parameters": {
+                "collectionId": "users",
+                "limit": 20
+            },
+            "mapper": {
+                "queries": [
+                    {
+                        "field": "lastActivityDate",
+                        "operator": "<",
+                        "value": "{{addDays(now; -7)}}"
+                    },
+                    {
+                        "field": "lastNotificationDate",
+                        "operator": "<",
+                        "value": "{{addDays(now; -7)}}"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        {
+            "id": 2,
+            "module": "openai-gpt-3:CreateCompletion",
+            "version": 1,
+            "parameters": {
+                "model": "gpt-3.5-turbo",
+                "maxTokens": 100
+            },
+            "mapper": {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a friendly coding tutor."
+                    },
+                    {
+                        "role": "user",
+                        "content": "Write a 1-sentence motivation for {{1.displayName}} who hasn't coded in a week."
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 0
+                }
+            }
+        },
+        {
+            "id": 3,
+            "module": "email:SendEmail",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "to": "{{1.email}}",
+                "subject": "We miss you, {{1.displayName}}!",
+                "content": "<p>{{2.choices[].message.content}}</p><p><a href='https://voicecode.ai/dashboard'>Resume Learning</a></p>"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 0
+                }
+            }
+        },
+        {
+            "id": 4,
+            "module": "google-cloud-firestore:UpdateDocument",
+            "version": 1,
+            "parameters": {
+                "collectionId": "users"
+            },
+            "mapper": {
+                "documentId": "{{1.id}}",
+                "data": {
+                    "lastNotificationDate": "{{now}}"
+                }
+            },
+            "metadata": {
+                "designer": {
+                    "x": 900,
+                    "y": 0
+                }
+            }
+        }
+    ],
+    "metadata": {
+        "instant": false,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "sequential": false,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "us1.make.com"
+    }
+}

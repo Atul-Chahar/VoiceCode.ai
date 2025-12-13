@@ -1,0 +1,98 @@
+{
+    "name": "VoiceCode - Course Certificate Generator",
+    "flow": [
+        {
+            "id": 1,
+            "module": "webhook:CustomWebhook",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "VoiceCode Certificate Trigger"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        {
+            "id": 2,
+            "module": "google-slides:CreatePresentation",
+            "version": 1,
+            "parameters": {
+                "title": "Certificate - {{1.userName}}",
+                "templateId": "[SELECT_YOUR_TEMPLATE_ID]",
+                "folderId": "[SELECT_TARGET_FOLDER_ID]"
+            },
+            "mapper": {
+                "name": "{{1.userName}}",
+                "course": "{{1.courseName}}",
+                "date": "{{1.completionDate}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 0
+                }
+            }
+        },
+        {
+            "id": 3,
+            "module": "google-drive:DownloadFile",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "fileId": "{{2.presentationId}}",
+                "format": "application/pdf"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 0
+                }
+            }
+        },
+        {
+            "id": 4,
+            "module": "email:SendEmail",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "to": "{{1.email}}",
+                "subject": "Congratulations! Here is your {{1.courseName}} Certificate",
+                "content": "<p>Hi {{1.userName}},</p><p>Great job completing the course! Find your certificate attached.</p>",
+                "attachments": [
+                    {
+                        "fileName": "Certificate.pdf",
+                        "data": "{{3.data}}"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 900,
+                    "y": 0
+                }
+            }
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "sequential": false,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "us1.make.com"
+    }
+}
