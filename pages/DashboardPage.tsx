@@ -4,6 +4,7 @@ import { JAVASCRIPT_COURSE } from '../constants';
 import { useCourseProgress } from '../hooks/useCourseProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { StatCard, ActivityChart, DailyGoalsWidget } from '../components/DashboardWidgets';
+import CourseDetailsModal from '../components/CourseDetailsModal';
 
 interface DashboardPageProps {
   navigateTo: (view: View) => void;
@@ -12,6 +13,8 @@ interface DashboardPageProps {
 const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
   const { user } = useAuth();
   const { progress } = useCourseProgress(JAVASCRIPT_COURSE.id);
+  const [showDetails, setShowDetails] = useState(false);
+
   const totalLessons = JAVASCRIPT_COURSE.modules.reduce((acc, module) => acc + module.lessons.length, 0);
   const completedLessonsCount = progress.completedLessons.length;
   const progressPercentage = totalLessons > 0 ? (completedLessonsCount / totalLessons) * 100 : 0;
@@ -125,7 +128,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
                         {progressPercentage > 0 ? 'Continue Lesson' : 'Start Course'}
                         <i className="fas fa-arrow-right transform group-hover/btn:translate-x-1 transition-transform"></i>
                       </button>
-                      <button className="px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-sm font-bold">
+                      <button
+                        onClick={() => setShowDetails(true)}
+                        className="px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-sm font-bold"
+                      >
                         <i className="fas fa-list-ul mr-2"></i> Details
                       </button>
                     </div>
@@ -162,6 +168,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
 
         </div>
       </div>
+
+      <CourseDetailsModal
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+        course={{ ...JAVASCRIPT_COURSE, totalDuration: '4 Weeks' }} // Augment with duration as per typical display
+        onStartCourse={() => {
+          setShowDetails(false);
+          navigateTo('lesson');
+        }}
+      />
     </div>
   );
 };

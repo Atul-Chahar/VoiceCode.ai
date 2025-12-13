@@ -1,19 +1,19 @@
 
 export interface Message {
-  id: string;
-  sender: 'user' | 'ai';
-  text: string;
+    id: string;
+    sender: 'user' | 'ai';
+    text: string;
 }
 
 export enum InteractionMode {
-  Chat = 'CHAT',
-  Voice = 'VOICE',
+    Chat = 'CHAT',
+    Voice = 'VOICE',
 }
 
 export interface Progress {
-  completedLessons: string[];
-  currentLessonId: string;
-  aiMemory: string[];
+    completedLessons: string[];
+    currentLessonId: string;
+    aiMemory: string[];
 }
 
 // New strictly typed Firestore models
@@ -21,25 +21,25 @@ export interface UserProfile {
     uid: string;
     name: string;
     email: string;
-    createdAt: string; 
+    createdAt: string;
 }
 
 export interface CourseProgress {
-  completedLessonIds: string[];
-  currentLessonId: string | null;
-  aiMemory?: string[];
-  updatedAt?: any; // generic for Firestore Timestamp or Date
+    completedLessonIds: string[];
+    currentLessonId: string | null;
+    aiMemory?: string[];
+    updatedAt?: any; // generic for Firestore Timestamp or Date
 }
 
 export interface UserNotes {
-  content: string;
-  updatedAt?: any;
+    content: string;
+    updatedAt?: any;
 }
 
 export interface Transcript {
-  user: string;
-  ai: string;
-  isFinal: boolean;
+    user: string;
+    ai: string;
+    isFinal: boolean;
 }
 
 export interface ConsoleOutput {
@@ -124,8 +124,12 @@ export interface Module {
 
 export interface Course {
     id: string;
-    title: string; 
+    title: string;
     description: string;
+    outcomes?: string[];
+    prerequisites?: string[];
+    level?: string;
+    totalDuration?: string;
     modules: Module[];
 }
 

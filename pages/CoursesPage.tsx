@@ -1,24 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from '../App';
 import { JAVASCRIPT_COURSE } from '../constants';
+import CourseDetailsModal from '../components/CourseDetailsModal';
+import { Course } from '../types';
 
 interface CoursesPageProps {
   navigateTo: (view: View) => void;
 }
 
 const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo }) => {
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
   // Combine real courses with placeholders for uniform rendering
   const allCourses = [
     {
-      id: JAVASCRIPT_COURSE.id,
-      title: JAVASCRIPT_COURSE.title,
-      description: JAVASCRIPT_COURSE.description,
+      ...JAVASCRIPT_COURSE,
       icon: 'JS',
       isActive: true,
       iconColor: 'text-yellow-400',
       bgColor: 'bg-yellow-400/10',
-      level: 'Beginner',
-      duration: '4 Weeks',
       gradient: 'from-orange-600 to-orange-400'
     },
     {
@@ -30,8 +30,9 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo }) => {
       iconColor: 'text-blue-400',
       bgColor: 'bg-blue-400/10',
       level: 'Intermediate',
-      duration: '6 Weeks',
-      gradient: 'from-blue-600 to-blue-400'
+      totalDuration: '6 Weeks',
+      gradient: 'from-blue-600 to-blue-400',
+      modules: [] // Placeholder
     },
     {
       id: 'go-coming-soon',
@@ -42,8 +43,9 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo }) => {
       iconColor: 'text-cyan-400',
       bgColor: 'bg-cyan-400/10',
       level: 'Advanced',
-      duration: '8 Weeks',
-      gradient: 'from-cyan-600 to-cyan-400'
+      totalDuration: '8 Weeks',
+      gradient: 'from-cyan-600 to-cyan-400',
+      modules: [] // Placeholder
     }
   ];
 
@@ -97,22 +99,30 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo }) => {
                   </div>
 
                   <h3 className="text-2xl font-bold font-manrope mb-3 group-hover:text-white transition-colors">{course.title}</h3>
-                  <p className="text-zinc-400 leading-relaxed text-sm mb-6">{course.description}</p>
+                  <p className="text-zinc-400 leading-relaxed text-sm mb-6 line-clamp-3">{course.description}</p>
 
                   <div className="flex items-center gap-4 text-xs font-medium text-zinc-500">
-                    <span className="flex items-center gap-1.5"><i className="fas fa-clock"></i> {course.duration}</span>
+                    <span className="flex items-center gap-1.5"><i className="fas fa-clock"></i> {course.totalDuration}</span>
                     <span className="flex items-center gap-1.5"><i className="fas fa-video"></i> AI Tutor Support</span>
                   </div>
                 </div>
 
                 {course.isActive ? (
-                  <button
-                    onClick={() => navigateTo('dashboard')}
-                    className="w-full py-4 rounded-xl font-bold text-sm tracking-wide bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg hover:shadow-orange-500/25 transform hover:scale-[1.02] transition-all flex items-center justify-center group/btn relative z-10"
-                  >
-                    Start Learning Now
-                    <i className="fas fa-arrow-right ml-2 group-hover/btn:translate-x-1 transition-transform"></i>
-                  </button>
+                  <div className="space-y-3 relative z-10">
+                    <button
+                      onClick={() => navigateTo('dashboard')}
+                      className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg hover:shadow-orange-500/25 transform hover:scale-[1.02] transition-all flex items-center justify-center group/btn"
+                    >
+                      Start Learning Now
+                      <i className="fas fa-arrow-right ml-2 group-hover/btn:translate-x-1 transition-transform"></i>
+                    </button>
+                    <button
+                      onClick={() => setSelectedCourse(course)}
+                      className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide bg-zinc-800 text-zinc-300 border border-white/10 hover:bg-zinc-700 hover:text-white transition-all flex items-center justify-center"
+                    >
+                      <i className="fas fa-info-circle mr-2"></i> View Syllabus
+                    </button>
+                  </div>
                 ) : (
                   <button disabled className="w-full py-4 rounded-xl font-bold text-sm tracking-wide bg-zinc-800 text-zinc-500 border border-white/5 cursor-not-allowed flex items-center justify-center relative z-10">
                     Join Waitlist
@@ -140,6 +150,16 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo }) => {
           </div>
         </div>
       </div>
+
+      {/* Course Details Modal */}
+      {selectedCourse && (
+        <CourseDetailsModal
+          isOpen={!!selectedCourse}
+          onClose={() => setSelectedCourse(null)}
+          course={selectedCourse}
+          onStartCourse={() => navigateTo('dashboard')}
+        />
+      )}
     </div>
   );
 };

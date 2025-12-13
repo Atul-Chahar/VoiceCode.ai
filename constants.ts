@@ -6,10 +6,25 @@ import { rawCurriculumData } from './javascriptCurriculum';
 const rawDb = rawCurriculumData as RawCurriculumDatabase;
 
 export const JAVASCRIPT_COURSE: Course = {
-    id: rawDb.course.id,
-    title: rawDb.course.name, // Mapping 'name' from JSON to 'title' for UI consistency
-    description: rawDb.course.description,
-    modules: rawDb.course.modules
+  id: rawDb.course.id,
+  title: "JavaScript Mastery", // Mapping 'name' from JSON to 'title' for UI consistency
+  description: "Start from scratch and build real-world apps. Master the modern web's most popular language with your AI Tutor.",
+  level: "Beginner to Intermediate",
+  totalDuration: "4 Weeks (Estimated)",
+  outcomes: [
+    "Build interactive websites with modern DOM manipulation",
+    "Master asynchronous programming (Promises, Async/Await)",
+    "Understand closures, scope, and execution context",
+    "Debug complex issues with Chrome DevTools and AI",
+    "Write clean, modular, and ES6+ modern JavaScript",
+    "Create a final project: A dynamic Task Management App"
+  ],
+  prerequisites: [
+    "No prior coding experience required",
+    "A computer with internet access",
+    "Basic understanding of how to use a web browser"
+  ],
+  modules: rawDb.course.modules
 };
 
 export const INITIAL_PROGRESS = {
