@@ -2,8 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { authService } from '../services/authService';
-import { auth } from '../lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { supabase } from '../lib/supabase';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
     user: User | null;
@@ -25,14 +25,13 @@ export const useAuth = () => {
     return context;
 };
 
-// Helper to map standard Firebase user format to our app's standard User format
-const mapUser = (fbUser: FirebaseUser | null): User | null => {
-    if (!fbUser) return null;
-    // For anonymous users, email and displayName might be null.
-    const name = fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Guest');
+// Helper to map Supabase user to our app's User type
+const mapUser = (sbUser: SupabaseUser | null): User | null => {
+    if (!sbUser) return null;
+    const name = sbUser.user_metadata?.full_name || sbUser.email?.split('@')[0] || 'Guest';
     return {
-        id: fbUser.uid,
-        email: fbUser.email || `guest_${fbUser.uid.slice(0,5)}@voicecode.ai`, // fake email for internal consistency if needed
+        id: sbUser.id,
+        email: sbUser.email || `guest_${sbUser.id.slice(0, 5)}@voicecode.ai`,
         name: name
     };
 };
@@ -46,14 +45,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Standard Firebase listener for auth state changes.
-        // This handles initial load, login, logout, etc. automatically.
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-            setUser(mapUser(firebaseUser));
+        // Initial session check
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(mapUser(session?.user ?? null));
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        // Listen for changes
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(mapUser(session?.user ?? null));
+            setLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const login = async (email: string, password: string) => {
@@ -82,3 +88,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
