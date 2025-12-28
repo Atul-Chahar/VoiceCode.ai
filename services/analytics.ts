@@ -7,8 +7,8 @@ const isProduction = import.meta.env.PROD;
 export const analytics = {
     init: () => {
         if (isProduction) {
-            posthog.init(import.meta.env.VITE_POSTHOG_KEY || '', {
-                api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
+            posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY || import.meta.env.VITE_POSTHOG_KEY || '', {
+                api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
                 autocapture: true, // Automatically track clicks, pageviews, etc.
                 capture_pageview: false // We will handle pageviews manually for SPA
             });
