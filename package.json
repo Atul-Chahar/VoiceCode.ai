@@ -17,6 +17,8 @@
     "@splinetool/react-spline": "^4.0.0",
     "@splinetool/runtime": "^1.0.0",
     "@supabase/supabase-js": "^2.89.0",
+    "@vercel/analytics": "^1.6.1",
+    "posthog-js": "^1.310.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

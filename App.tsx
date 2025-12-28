@@ -13,6 +13,9 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
+import { Analytics } from '@vercel/analytics/react';
+import { analytics } from './services/analytics';
+
 export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations' | 'login' | 'signup';
 
 const MainApp: React.FC = () => {
@@ -23,35 +26,45 @@ const MainApp: React.FC = () => {
     // Protected routes
     const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
     if (protectedViews.includes(view) && !user && !loading) {
-       setCurrentView('login');
-       window.scrollTo(0, 0);
-       return;
+      setCurrentView('login');
+      window.scrollTo(0, 0);
+      return;
     }
     setCurrentView(view);
     window.scrollTo(0, 0);
   }, [user, loading]);
 
-  // Effect to handle initial load redirection if on a protected route
+  // Effect to handle initial load, auth redirects, and Analytics
   useEffect(() => {
-      if (!loading) {
-          const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
-          if (protectedViews.includes(currentView) && !user) {
-              setCurrentView('login');
-          }
-          // Redirect from auth pages if already logged in
-          if ((currentView === 'login' || currentView === 'signup') && user) {
-              setCurrentView('dashboard');
-          }
+    // Track Page View whenever currentView changes
+    analytics.pageView();
+  }, [currentView]);
+
+  useEffect(() => {
+    if (!loading) {
+      const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
+      if (protectedViews.includes(currentView) && !user) {
+        setCurrentView('login');
       }
+      // Redirect from auth pages if already logged in
+      if ((currentView === 'login' || currentView === 'signup') && user) {
+        setCurrentView('dashboard');
+      }
+
+      // Identify user in analytics if logged in
+      if (user) {
+        analytics.identify(user.uid, { email: user.email, name: user.displayName });
+      }
+    }
   }, [currentView, user, loading]);
 
   const renderContent = () => {
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                 <i className="fas fa-circle-notch fa-spin text-brand-green text-4xl"></i>
-            </div>
-        );
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <i className="fas fa-circle-notch fa-spin text-brand-green text-4xl"></i>
+        </div>
+      );
     }
 
     switch (currentView) {
@@ -75,7 +88,7 @@ const MainApp: React.FC = () => {
         return <LandingPage navigateTo={navigateTo} />;
     }
   };
-  
+
   // Views that don't need standard Nav/Footer
   if (currentView === 'lesson') {
     return renderContent();
@@ -91,11 +104,17 @@ const MainApp: React.FC = () => {
 };
 
 const App: React.FC = () => {
-    return (
-        <AuthProvider>
-            <MainApp />
-        </AuthProvider>
-    );
+  useEffect(() => {
+    // Initialize Analytics once on mount
+    analytics.init();
+  }, []);
+
+  return (
+    <AuthProvider>
+      <MainApp />
+      <Analytics />
+    </AuthProvider>
+  );
 };
 
 export default App;
