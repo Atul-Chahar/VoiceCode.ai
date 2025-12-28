@@ -1,17 +1,41 @@
 
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from "@google/genai";
 import { Progress, Lesson } from "../types";
+import { supabase } from "../lib/supabase";
 
 // Initialize strictly according to guidelines, but lazily to prevent top-level browser crashes
 let aiClient: GoogleGenAI | null = null;
+let cachedApiKey: string | null = null;
 
-function getAiClient(): GoogleGenAI {
-    if (!aiClient) {
-        const apiKey = process.env.API_KEY;
-        if (!apiKey || apiKey.trim() === '') {
-            console.error("FATAL: API_KEY is missing from environment.");
-            throw new Error("API_KEY is missing. Please set it in your environment variables.");
+async function getApiKey(): Promise<string> {
+    if (cachedApiKey) return cachedApiKey;
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("User not authenticated");
+
+        const { data, error } = await supabase.functions.invoke('chat-with-gemini', {
+            body: { action: 'get_key' }
+        });
+
+        if (error || !data.apiKey) {
+            console.error("Failed to fetch API Key:", error);
+            // Fallback for dev if env var is still there? 
+            // Better to fail secure.
+            throw new Error("Failed to retrieve secure API Key.");
         }
+
+        cachedApiKey = data.apiKey;
+        return cachedApiKey!;
+    } catch (e) {
+        console.error("Error fetching secure key:", e);
+        throw e;
+    }
+}
+
+async function getAiClient(): Promise<GoogleGenAI> {
+    if (!aiClient) {
+        const apiKey = await getApiKey();
         aiClient = new GoogleGenAI({ apiKey });
     }
     return aiClient;
@@ -76,7 +100,7 @@ const controlAppTool: FunctionDeclaration = {
 type LiveSessionType = Awaited<ReturnType<GoogleGenAI['live']['connect']>>;
 export type LiveSession = LiveSessionType;
 
-export const startLiveSession = (
+export const startLiveSession = async (
     progress: Progress,
     currentLesson: Lesson | null,
     callbacks: {
@@ -119,8 +143,9 @@ ${lessonProtocol}
 - User History Summary: ${aiMemory.length > 0 ? aiMemory.slice(-3).join('; ') : 'New user.'}
 `;
 
-    // Use the lazy getter here
-    return getAiClient().live.connect({
+    // Use the lazy getter here - await the client now
+    const client = await getAiClient();
+    return client.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks,
         config: {

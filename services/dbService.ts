@@ -109,7 +109,7 @@ export const dbService = {
             .select('data')
             .eq('user_id', userId)
             .eq('context_id', courseId) // generic context ID
-            .single();
+            .maybeSingle();
 
         if (error && error.code !== 'PGRST116') { // PGRST116 is 'not found'
             console.error("Error fetching progress:", error);
@@ -144,7 +144,7 @@ export const dbService = {
             .from('user_notes')
             .select('content')
             .eq('user_id', userId)
-            .single();
+            .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
             console.error("Error fetching notes:", error);

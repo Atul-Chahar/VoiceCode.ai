@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:login": "supabase login",
+    "supabase:link": "supabase link dyieuuassznqnkectksn",
+    "supabase:deploy": "supabase functions deploy chat-with-gemini"
   },
   "dependencies": {
     "@google/genai": "latest",
@@ -14,7 +17,6 @@
     "@splinetool/react-spline": "^4.0.0",
     "@splinetool/runtime": "^1.0.0",
     "@supabase/supabase-js": "^2.89.0",
-    "firebase": "^10.13.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -22,6 +24,7 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
+    "supabase": "^2.70.5",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
   }
