@@ -167,6 +167,21 @@ export const dbService = {
             console.error("Error saving notes:", error);
             throw error;
         }
+    },
+
+    async submitFeedback(userId: string, message: string, type: 'bug' | 'feature' | 'general' = 'general'): Promise<void> {
+        const { error } = await supabase
+            .from('feedback')
+            .insert({
+                user_id: userId,
+                message,
+                type
+            });
+
+        if (error) {
+            console.error("Error submitting feedback:", error);
+            throw error;
+        }
     }
 };
 

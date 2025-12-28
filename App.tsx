@@ -103,7 +103,11 @@ const MainApp: React.FC = () => {
   );
 };
 
+import FeedbackModal from './components/FeedbackModal';
+
 const App: React.FC = () => {
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
   useEffect(() => {
     // Initialize Analytics once on mount
     analytics.init();
@@ -113,6 +117,17 @@ const App: React.FC = () => {
     <AuthProvider>
       <MainApp />
       <Analytics />
+
+      {/* Feedback Trigger Button */}
+      <button
+        onClick={() => setIsFeedbackOpen(true)}
+        className="fixed bottom-6 right-6 z-[9000] w-12 h-12 bg-[#1E1E1E] border border-white/10 rounded-full shadow-2xl flex items-center justify-center text-gray-400 hover:text-white hover:border-brand-primary hover:scale-110 transition-all group"
+        title="Send Feedback"
+      >
+        <i className="fas fa-comment-alt group-hover:text-brand-primary transition-colors"></i>
+      </button>
+
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </AuthProvider>
   );
 };
