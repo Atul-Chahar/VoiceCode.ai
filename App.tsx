@@ -53,7 +53,7 @@ const MainApp: React.FC = () => {
 
       // Identify user in analytics if logged in
       if (user) {
-        analytics.identify(user.uid, { email: user.email, name: user.displayName });
+        analytics.identify(user.id, { email: user.email, name: user.name });
       }
     }
   }, [currentView, user, loading]);

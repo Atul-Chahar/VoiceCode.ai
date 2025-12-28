@@ -30,7 +30,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
         setError('');
 
         try {
-            await dbService.submitFeedback(user.uid, message, type);
+            await dbService.submitFeedback(user.id, message, type);
             setSuccess(true);
             setTimeout(() => {
                 setSuccess(false);
@@ -80,8 +80,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                                         type="button"
                                         onClick={() => setType(t)}
                                         className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${type === t
-                                                ? 'bg-brand-primary/20 border-brand-primary text-brand-primary'
-                                                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                            ? 'bg-brand-primary/20 border-brand-primary text-brand-primary'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                                             }`}
                                     >
                                         {t.charAt(0).toUpperCase() + t.slice(1)}
