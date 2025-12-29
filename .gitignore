@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+boot_dev_ui/
+*_backup_*.sql

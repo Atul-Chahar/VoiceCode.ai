@@ -32,7 +32,8 @@ const mapUser = (sbUser: SupabaseUser | null): User | null => {
     return {
         id: sbUser.id,
         email: sbUser.email || `guest_${sbUser.id.slice(0, 5)}@voicecode.ai`,
-        name: name
+        name: name,
+        avatar: sbUser.user_metadata?.avatar_url
     };
 };
 

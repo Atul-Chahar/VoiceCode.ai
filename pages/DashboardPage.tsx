@@ -3,9 +3,10 @@ import { View } from '../App';
 import { JAVASCRIPT_COURSE } from '../constants';
 import { useCourseProgress } from '../hooks/useCourseProgress';
 import { useAuth } from '../contexts/AuthContext';
-import { StatCard, ActivityChart, DailyGoalsWidget } from '../components/DashboardWidgets';
-import CourseDetailsModal from '../components/CourseDetailsModal';
+import LinearPath from '../components/LinearPath';
+import { DailyGoalsWidget } from '../components/DashboardWidgets';
 import CertificateModal from '../components/CertificateModal';
+import { Play, Sparkles, Flame } from 'lucide-react';
 
 interface DashboardPageProps {
   navigateTo: (view: View) => void;
@@ -14,183 +15,135 @@ interface DashboardPageProps {
 const DashboardPage: React.FC<DashboardPageProps> = ({ navigateTo }) => {
   const { user } = useAuth();
   const { progress } = useCourseProgress(JAVASCRIPT_COURSE.id);
-  const [showDetails, setShowDetails] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
 
+  // Calculate Progress
   const totalLessons = JAVASCRIPT_COURSE.modules.reduce((acc, module) => acc + module.lessons.length, 0);
   const completedLessonsCount = progress.completedLessons.length;
   const progressPercentage = totalLessons > 0 ? (completedLessonsCount / totalLessons) * 100 : 0;
 
-  // Mock Data for Widgets
-  const activityData = [
-    { label: 'Mon', value: 45 },
-    { label: 'Tue', value: 60 },
-    { label: 'Wed', value: 30 },
-    { label: 'Thu', value: 85 },
-    { label: 'Fri', value: 50 },
-    { label: 'Sat', value: 20 },
-    { label: 'Sun', value: 0 },
-  ];
-
+  // Mock Goals
   const [goals, setGoals] = useState([
-    { id: '1', title: 'Complete 2 Lessons', completed: false },
-    { id: '2', title: 'Practice "Variables"', completed: true },
-    { id: '3', title: 'Spend 30 mins coding', completed: false },
+    { id: '1', title: 'Complete next lesson', completed: false },
+    { id: '2', title: 'Use voice command', completed: true },
+    { id: '3', title: 'Earn 50 XP', completed: false },
   ]);
 
   const toggleGoal = (id: string) => {
     setGoals(goals.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
   };
 
+  const handleLessonSelect = (lessonId: string) => {
+    // Navigate to lesson (in real app, would set specific lesson ID/Slug)
+    navigateTo('lesson');
+  };
+
   return (
-    <div className="pt-24 md:pt-28 pb-12 px-6 min-h-screen bg-[#0D0D0D] text-white font-sans selection:bg-orange-500/30 selection:text-orange-200">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="pt-24 min-h-screen bg-[#0D0D0D] text-white">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
 
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <p className="text-zinc-500 font-medium mb-1">Overview</p>
-            <h1 className="text-4xl md:text-5xl font-medium tracking-tight font-manrope">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">{user?.name.split(' ')[0] || 'Coder'}</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowCertificate(true)}
-              className="h-10 px-4 rounded-full bg-gradient-to-r from-orange-600 to-orange-500 text-white border border-orange-400 text-sm font-bold shadow-[0_0_15px_-3px_rgba(249,115,22,0.4)] hover:scale-105 transition-all flex items-center gap-2"
-            >
-              <i className="fas fa-certificate"></i> Get Certificate
-            </button>
-            <button className="h-10 px-4 rounded-full bg-zinc-900 border border-white/10 text-zinc-400 text-sm font-medium hover:text-white hover:border-white/20 transition-all flex items-center gap-2">
-              <i className="fas fa-calendar-alt"></i> Today
-            </button>
-            <button className="h-10 w-10 rounded-full bg-zinc-800 text-zinc-400 border border-white/5 flex items-center justify-center hover:bg-zinc-700 hover:text-white transition-colors">
-              <i className="fas fa-plus"></i>
-            </button>
-          </div>
-        </header>
+        {/* HEADER: Current Path Overview */}
+        <section className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 md:p-10 relative overflow-hidden">
+          {/* Background Effects */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 blur-[120px] rounded-full pointer-events-none" />
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total XP" value="2,450" icon="fa-bolt" trend="+12% this week" />
-          <StatCard label="Day Streak" value="5 Days" icon="fa-fire" trend="On fire!" />
-          <StatCard label="Lessons Done" value={completedLessonsCount} icon="fa-check-circle" />
-          <StatCard label="Time Spent" value="12h 30m" icon="fa-clock" />
-        </div>
-
-        {/* Main Grid: Activity + Courses vs Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Left Column (2/3) */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Activity Graph */}
-            <ActivityChart data={activityData} />
-
-            {/* Course Cards Section */}
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold font-manrope">Your Courses</h2>
-                <button className="text-orange-500 hover:text-orange-400 text-sm font-bold uppercase tracking-wider transition-colors">View All</button>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/20 uppercase">
+                  Current Path
+                </span>
+                <span className="text-zinc-500 text-sm flex items-center gap-1">
+                  <Flame size={14} className="text-orange-500" /> 5 Day Streak
+                </span>
               </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{JAVASCRIPT_COURSE.title}</h1>
+              <p className="text-zinc-400 max-w-xl">
+                Continue your journey to becoming a full-stack developer. Master the fundamentals of JavaScript.
+              </p>
+            </div>
 
-              {/* Enhanced Course Card */}
-              <div className="group relative bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8 hover:bg-zinc-900/60 transition-all duration-500 overflow-hidden backdrop-blur-sm">
-                {/* Background Glow */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 blur-[100px] rounded-full group-hover:bg-orange-500/10 transition-all"></div>
-
-                <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                  {/* Icon/Thumbnail */}
-                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-zinc-800/80 border border-white/5 flex items-center justify-center flex-shrink-0 shadow-xl group-hover:scale-105 transition-transform duration-500">
-                    <i className="fab fa-js text-5xl text-yellow-400"></i>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-grow w-full">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-2xl font-bold text-white font-manrope">{JAVASCRIPT_COURSE.title}</h3>
-                          <span className="bg-zinc-800 border border-white/10 text-xs font-bold px-2 py-0.5 rounded text-gray-400">BEGINNER</span>
-                        </div>
-                        <p className="text-zinc-500 text-sm">Master the language of the web.</p>
-                      </div>
-                      <div className="text-right hidden md:block">
-                        <p className="text-3xl font-bold text-white font-manrope">{Math.round(progressPercentage)}%</p>
-                        <p className="text-xs text-zinc-500 uppercase tracking-wide">Complete</p>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-zinc-800 rounded-full h-2 mb-6 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-orange-600 to-orange-400 h-full rounded-full transition-all duration-1000 ease-out relative"
-                        style={{ width: `${Math.max(progressPercentage, 5)}%` }}
-                      >
-                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => navigateTo('lesson')} className="bg-white text-black hover:bg-orange-500 hover:text-white transition-colors px-6 py-3 rounded-xl font-bold text-sm tracking-wide flex items-center gap-2 group/btn">
-                        {progressPercentage > 0 ? 'Continue Lesson' : 'Start Course'}
-                        <i className="fas fa-arrow-right transform group-hover/btn:translate-x-1 transition-transform"></i>
-                      </button>
-                      <button
-                        onClick={() => setShowDetails(true)}
-                        className="px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-sm font-bold"
-                      >
-                        <i className="fas fa-list-ul mr-2"></i> Details
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            <div className="w-full md:w-auto flex flex-col items-end gap-3">
+              <div className="text-right">
+                <span className="text-3xl font-bold text-white">{Math.round(progressPercentage)}%</span>
+                <span className="text-zinc-500 text-sm ml-2">COMPLETED</span>
               </div>
+              <button
+                onClick={() => navigateTo('lesson')}
+                className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 transition-all transform hover:scale-105"
+              >
+                <Play size={18} fill="currentColor" /> Resume Learning
+              </button>
             </div>
           </div>
 
-          {/* Right Column (Sidebar) */}
-          <div className="space-y-8">
+          {/* Progress Bar */}
+          <div className="mt-8 relative h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className="absolute top-0 left-0 h-full bg-orange-500 rounded-full transition-all duration-1000"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </section>
+
+        {/* MAIN LAYOUT: Linear Path + Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
+
+          {/* Left Column: Linear Path (8 cols) */}
+          <div className="lg:col-span-8">
+            <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-6 md:p-8">
+              <div className="flex items-center justify-between mb-8 border-b border-zinc-800 pb-4">
+                <h2 className="text-xl font-bold text-zinc-200">Course Roadmap</h2>
+                <button
+                  onClick={() => setShowCertificate(true)}
+                  className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded border border-zinc-700 transition-colors"
+                >
+                  Get Certificate
+                </button>
+              </div>
+              <LinearPath
+                course={JAVASCRIPT_COURSE}
+                progress={progress}
+                onLessonSelect={handleLessonSelect}
+              />
+            </div>
+          </div>
+
+          {/* Right Column: Sidebar (4 cols) */}
+          <div className="lg:col-span-4 space-y-6">
+
             {/* Daily Goals */}
-            <div className="h-[400px]">
+            <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-6">
+              <h3 className="text-lg font-bold text-zinc-200 mb-4 flex items-center gap-2">
+                <Sparkles size={18} className="text-yellow-500" /> Daily Quests
+              </h3>
               <DailyGoalsWidget goals={goals} onToggle={toggleGoal} />
             </div>
 
-            {/* AI Assistant Promo Card */}
-            <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 blur-[50px] rounded-full"></div>
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 mb-4">
-                  <i className="fas fa-robot text-xl"></i>
-                </div>
-                <h3 className="text-xl font-bold text-white font-manrope mb-2">Stuck on code?</h3>
-                <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-                  Your AI tutor is ready to help you debug and understand complex concepts instantly.
-                </p>
-                <button onClick={() => navigateTo('lesson')} className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-colors shadow-lg shadow-purple-600/20">
-                  Ask AI Tutor
-                </button>
-              </div>
+            {/* AI Promo */}
+            <div className="bg-gradient-to-b from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-3xl p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-[50px] rounded-full pointer-events-none" />
+              <h3 className="text-lg font-bold text-white mb-2">Need Help?</h3>
+              <p className="text-zinc-400 text-sm mb-4">
+                Your AI voice tutor is available 24/7 to explain complex topics.
+              </p>
+              <button
+                onClick={() => navigateTo('lesson')}
+                className="w-full bg-zinc-800 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 py-2 rounded-lg text-sm font-semibold transition-all"
+              >
+                Start Voice Session
+              </button>
             </div>
+
           </div>
-
         </div>
-      </div>
 
-      <CourseDetailsModal
-        isOpen={showDetails}
-        onClose={() => setShowDetails(false)}
-        course={{ ...JAVASCRIPT_COURSE, totalDuration: '4 Weeks' }} // Augment with duration as per typical display
-        onStartCourse={() => {
-          setShowDetails(false);
-          navigateTo('lesson');
-        }}
-      />
+      </div>
 
       <CertificateModal
         isOpen={showCertificate}
         onClose={() => setShowCertificate(false)}
-        courseName="JavaScript Mastery"
+        courseName={JAVASCRIPT_COURSE.title}
       />
     </div>
   );

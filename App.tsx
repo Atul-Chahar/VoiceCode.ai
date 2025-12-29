@@ -9,6 +9,9 @@ import CoursesPage from './pages/CoursesPage';
 import ExplanationsPage from './pages/ExplanationsPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import ProfilePage from './pages/ProfilePage';
+import LeaderboardPage from './pages/LeaderboardPage';
+import TrainingPage from './pages/TrainingPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -16,7 +19,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Analytics } from '@vercel/analytics/react';
 import { analytics } from './services/analytics';
 
-export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations' | 'login' | 'signup';
+export type View = 'landing' | 'pricing' | 'courses' | 'dashboard' | 'lesson' | 'explanations' | 'login' | 'signup' | 'profile' | 'leaderboard' | 'training';
 
 const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('landing');
@@ -24,7 +27,7 @@ const MainApp: React.FC = () => {
 
   const navigateTo = useCallback((view: View) => {
     // Protected routes
-    const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
+    const protectedViews: View[] = ['dashboard', 'lesson', 'explanations', 'profile'];
     if (protectedViews.includes(view) && !user && !loading) {
       setCurrentView('login');
       window.scrollTo(0, 0);
@@ -42,7 +45,7 @@ const MainApp: React.FC = () => {
 
   useEffect(() => {
     if (!loading) {
-      const protectedViews: View[] = ['dashboard', 'lesson', 'explanations'];
+      const protectedViews: View[] = ['dashboard', 'lesson', 'explanations', 'profile'];
       if (protectedViews.includes(currentView) && !user) {
         setCurrentView('login');
       }
@@ -84,6 +87,12 @@ const MainApp: React.FC = () => {
         return <LoginPage navigateTo={navigateTo} />;
       case 'signup':
         return <SignupPage navigateTo={navigateTo} />;
+      case 'profile':
+        return <ProfilePage navigateTo={navigateTo} />;
+      case 'leaderboard':
+        return <LeaderboardPage navigateTo={navigateTo} />;
+      case 'training':
+        return <TrainingPage navigateTo={navigateTo} />;
       default:
         return <LandingPage navigateTo={navigateTo} />;
     }
